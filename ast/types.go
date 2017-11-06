@@ -3,11 +3,15 @@ package ast
 
 type File struct {
 	Constants []*Constant
+	Structs   []*Struct
 }
 
 type Constant struct {
 	Name  string
 	Value int64
+}
+
+type Struct struct {
 }
 
 type IntType struct {

@@ -14,6 +14,8 @@ File <- ds:Declaration* EOF {
     switch d := i.(type) {
       case *ast.Constant:
         f.Constants = append(f.Constants, d)
+      case *ast.Struct:
+        f.Structs = append(f.Structs, d)
       default:
         return nil, errors.New("unknown declaration")
     }
@@ -33,7 +35,7 @@ Declaration <- d:(ConstDecl / StructDecl) _ {
 
 //  ConstDecl ::= const CONST_ID = INT ;
 
-ConstDecl <- "const" _ n:ConstIdentifier _ '=' _ v:IntegerLiteral ';' {
+ConstDecl <- "const" __ n:ConstIdentifier _ '=' _ v:IntegerLiteral _ ';' {
   return &ast.Constant{
     Name: n.(string),
     Value: v.(int64),
@@ -42,9 +44,9 @@ ConstDecl <- "const" _ n:ConstIdentifier _ '=' _ v:IntegerLiteral ';' {
 
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
-StructDecl <- "struct" _ n:Identifier _ '{' ms:StructMember* e:StructEnding? '}' ';'? {
+StructDecl <- "struct" __ n:Identifier __ '{' ms:StructMember* e:StructEnding? '}' ';'? {
   fmt.Println("STRUCT")
-  return nil, nil
+  return &ast.Struct{}, nil
 }
 
 //  OptWithContext ::=
@@ -60,7 +62,7 @@ StructDecl <- "struct" _ n:Identifier _ '{' ms:StructMember* e:StructEnding? '}'
 //  StructMember ::= SMStruct
 //  StructMember ::= SMUnion
 
-StructMember <- _? m:SMInteger _? {
+StructMember <- _ m:SMInteger _ {
   return m, nil
 }
 
@@ -72,7 +74,7 @@ StructEnding <- "eos"
 
 //  SMInteger ::= IntType ID OptIntConstraint
 
-SMInteger <- t:IntType _ n:Identifier ';' {
+SMInteger <- t:IntType _ n:Identifier _ ';' {
   fmt.Println(t, n)
   return nil, nil
 }
@@ -99,17 +101,20 @@ ConstIdentifier <- [A-Z_] [A-Z0-9_]* {
 
 // Primitives
 
-IntegerLiteral <- (DecimalLiteral / HexLiteral) {
+IntegerLiteral <- (DecimalLiteral / HexLiteral / OctalLiteral) {
   return strconv.ParseInt(string(c.text), 0, 64)
 }
 
 DecimalLiteral <- [1-9]+ [0-9]*
 
-HexLiteral <- "0x" [0-9a-f]+
+HexLiteral <- "0x" [0-9a-fA-F]+
+
+OctalLiteral <- '0' [0-7]+
 
 // Character classes
 
-_ "whitespace" <- [ \t\n]+
+_ "optional whitespace" <- [ \t\n]*
+__ "whitespace" <- [ \t\n]+
 
 EOL <- '\n'
 EOF <- !.
