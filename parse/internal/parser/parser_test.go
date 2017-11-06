@@ -9,12 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ParseString(s string) (*ast.File, error) {
-	i, err := ParseReader("", strings.NewReader(s))
-	if err != nil {
-		return nil, err
-	}
-	return i.(*ast.File), nil
+func ParseString(s string, opts ...Option) (interface{}, error) {
+	return ParseReader("", strings.NewReader(s))
 }
 
 func TestConstant(t *testing.T) {
@@ -57,6 +53,40 @@ func TestStructBasic(t *testing.T) {
 	f, err := ParseString(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
+}
+
+func TestPragma(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Code    string
+		Type    string
+		Options []string
+	}{
+		{
+			"single",
+			"trunnel options ident1;",
+			"options",
+			[]string{"ident1"},
+		},
+		{
+			"multi",
+			"trunnel special ident1, ident2\t,    ident3   ,ident4   ;",
+			"special",
+			[]string{"ident1", "ident2", "ident3", "ident4"},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			f, err := ParseString(c.Code)
+			require.NoError(t, err)
+			expect := &ast.File{
+				Pragmas: []*ast.Pragma{
+					{Type: c.Type, Options: c.Options},
+				},
+			}
+			assert.Equal(t, expect, f)
+		})
+	}
 }
 
 func TestExample(t *testing.T) {

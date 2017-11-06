@@ -4,6 +4,7 @@ package ast
 type File struct {
 	Constants []*Constant
 	Structs   []*Struct
+	Pragmas   []*Pragma
 }
 
 type Constant struct {
@@ -33,3 +34,8 @@ var (
 	U32 = &IntType{Size: 32}
 	U64 = &IntType{Size: 64}
 )
+
+type Pragma struct {
+	Type    string
+	Options []string
+}

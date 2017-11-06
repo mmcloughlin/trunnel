@@ -16,6 +16,8 @@ File <- ds:Declaration* EOF {
         f.Constants = append(f.Constants, d)
       case *ast.Struct:
         f.Structs = append(f.Structs, d)
+      case *ast.Pragma:
+        f.Pragmas = append(f.Pragmas, d)
       default:
         return nil, errors.New("unknown declaration")
     }
@@ -29,7 +31,7 @@ File <- ds:Declaration* EOF {
 //  Declaration ::= extern struct ID OptWithContext ;
 //  Declaration ::= trunnel ID IDList ;
 
-Declaration <- d:(ConstDecl / StructDecl) _ {
+Declaration <- _ d:(ConstDecl / StructDecl / PragmaDecl) _ {
   return d, nil
 }
 
@@ -52,6 +54,13 @@ StructDecl <- "struct" __ n:Identifier __ '{' ms:StructMember* e:StructEnding? '
   return &ast.Struct{
     Name: n.(string),
     Members: m,
+  }, nil
+}
+
+PragmaDecl <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
+  return &ast.Pragma{
+    Type: n.(string),
+    Options: opts.([]string),
   }, nil
 }
 
@@ -98,6 +107,14 @@ IntType <- 'u' b:("8" / "16" / "32" / "64") {
 }
 
 // Identifiers
+
+IdentifierList <- n:Identifier ns:(_ ',' _ Identifier)* {
+  ids := []string{n.(string)}
+  for _, i := range ns.([]interface{}) {
+    ids = append(ids, i.([]interface{})[3].(string))
+  }
+  return ids, nil
+}
 
 Identifier <- [a-zA-Z_] [a-zA-Z0-9_]* {
   return string(c.text), nil
