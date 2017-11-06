@@ -1,15 +1,6 @@
 {
 
-package trunnel
-
-type File struct {
-  Constants []Constant
-}
-
-type Constant struct {
-  Name string
-  Value int64
-}
+package parser
 
 }
 
@@ -18,10 +9,10 @@ type Constant struct {
 //  File ::= Declarations
 
 File <- ds:Declaration* EOF {
-  f := &File{}
+  f := &ast.File{}
   for _, i := range ds.([]interface{}) {
     switch d := i.(type) {
-      case Constant:
+      case *ast.Constant:
         f.Constants = append(f.Constants, d)
       default:
         return nil, errors.New("unknown declaration")
@@ -36,20 +27,65 @@ File <- ds:Declaration* EOF {
 //  Declaration ::= extern struct ID OptWithContext ;
 //  Declaration ::= trunnel ID IDList ;
 
-Declaration <- d:ConstDeclaration _? {
+Declaration <- d:(ConstDecl / StructDecl) _ {
   return d, nil
 }
 
 //  ConstDecl ::= const CONST_ID = INT ;
 
-ConstDeclaration <- "const" _ n:ConstIdentifier _ '=' _ v:IntegerLiteral ';' {
-  return Constant{
+ConstDecl <- "const" _ n:ConstIdentifier _ '=' _ v:IntegerLiteral ';' {
+  return &ast.Constant{
     Name: n.(string),
     Value: v.(int64),
   }, nil
 }
 
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
+
+StructDecl <- "struct" _ n:Identifier _ '{' ms:StructMember* e:StructEnding? '}' ';'? {
+  fmt.Println("STRUCT")
+  return nil, nil
+}
+
+//  OptWithContext ::=
+//  OptWithContext ::= with context IDList
+//  TODO(mbm): context support
+
+//  StructMembers ::=
+//  StructMembers ::= StructMembers OptAnnotation StructMember ;
+
+//  StructMember ::= SMArray
+//  StructMember ::= SMInteger
+//  StructMember ::= SMString
+//  StructMember ::= SMStruct
+//  StructMember ::= SMUnion
+
+StructMember <- _? m:SMInteger _? {
+  return m, nil
+}
+
+//  StructEnding ::=
+//  StructEnding ::= SMRemainder ;
+//  StructEnding ::= eos ;
+
+StructEnding <- "eos"
+
+//  SMInteger ::= IntType ID OptIntConstraint
+
+SMInteger <- t:IntType _ n:Identifier ';' {
+  fmt.Println(t, n)
+  return nil, nil
+}
+
+//  IntType ::= u16
+//  IntType ::= u32
+//  IntType ::= u64
+//  IntType ::= u8
+
+IntType <- 'u' b:("8" / "16" / "32" / "64") {
+  s, err := strconv.Atoi(string(b.([]byte)))
+  return &ast.IntType{Size: s}, err
+}
 
 // Identifiers
 
@@ -63,9 +99,13 @@ ConstIdentifier <- [A-Z_] [A-Z0-9_]* {
 
 // Primitives
 
-IntegerLiteral <- [0-1]+ {
-  return strconv.ParseInt(string(c.text), 10, 64)
+IntegerLiteral <- (DecimalLiteral / HexLiteral) {
+  return strconv.ParseInt(string(c.text), 0, 64)
 }
+
+DecimalLiteral <- [1-9]+ [0-9]*
+
+HexLiteral <- "0x" [0-9a-f]+
 
 // Character classes
 
@@ -74,21 +114,15 @@ _ "whitespace" <- [ \t\n]+
 EOL <- '\n'
 EOF <- !.
 
-// 
-//  StructMember ::= SMArray
-//  StructMember ::= SMInteger
-//  StructMember ::= SMString
-//  StructMember ::= SMStruct
-//  StructMember ::= SMUnion
-// 
+//
+//
 //  SMArray ::= SMFixedArray
 //  SMArray ::= SMVarArray
-//  SMInteger ::= IntType ID OptIntConstraint
 //  SMString ::= nulterm ID
 //  SMStruct ::= StructDecl ID
 //  SMStruct ::= struct ID ID
 //  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
-// 
+//
 //  ArrayBase ::= IntType
 //  ArrayBase ::= StructDecl
 //  ArrayBase ::= char
@@ -105,10 +139,6 @@ EOF <- !.
 //  IntList ::= IntListMember
 //  IntListMember ::= Integer
 //  IntListMember ::= Integer .. Integer
-//  IntType ::= u16
-//  IntType ::= u32
-//  IntType ::= u64
-//  IntType ::= u8
 //  Integer ::= CONST_ID
 //  Integer ::= INT
 //  LengthKW ::= ID
@@ -124,17 +154,10 @@ EOF <- !.
 //  OptUnionLength ::=
 //  OptUnionLength ::= with LengthKW .. - Integer
 //  OptUnionLength ::= with LengthKW IDRef
-//  OptWithContext ::=
-//  OptWithContext ::= with context IDList
 //  SMFixedArray ::= ArrayBase ID [ Integer ]
 //  SMRemainder ::= OptAnnotation ArrayBase ID [ ]
 //  SMVarArray ::= ArrayBase ID [ .. - Integer ]
 //  SMVarArray ::= ArrayBase ID [ IDRef ]
-//  StructEnding ::=
-//  StructEnding ::= SMRemainder ;
-//  StructEnding ::= eos ;
-//  StructMembers ::=
-//  StructMembers ::= StructMembers OptAnnotation StructMember ;
 //  UnionCase ::= IntList
 //  UnionCase ::= default
 //  UnionField ::= SMFixedArray
@@ -151,13 +174,13 @@ EOF <- !.
 //  UnionMember ::= UnionCase : UnionFields OptExtentSpec
 //  UnionMembers ::= UnionMember
 //  UnionMembers ::= UnionMembers UnionMember
-// 
-// 
+//
+//
 // Additional constraints:
-// 
+//
 //    Structure declarations form a DAG.
-// 
+//
 //    Field references in SMVarArray and SMUnion and SMUnionLength refer
 //    only to earlier-occurring fields in the same structure.
-// 
+//
 //    No ExtentSpec unless the union has a UnionLength.

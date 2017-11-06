@@ -1,0 +1,8 @@
+const N_ELEMENTS = 100;
+const U8_MAX = 0xff;
+
+struct rgb {
+   u8 r;
+   u8 g;
+   u8 b;
+}

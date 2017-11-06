@@ -1,4 +1,4 @@
-package trunnel
+package parser
 
 import (
 	"testing"
