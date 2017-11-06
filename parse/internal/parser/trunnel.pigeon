@@ -37,7 +37,7 @@ Declaration <- _ d:(ConstDecl / StructDecl / PragmaDecl) _ {
 
 //  ConstDecl ::= const CONST_ID = INT ;
 
-ConstDecl <- "const" __ n:ConstIdentifier _ '=' _ v:IntegerLiteral _ ';' {
+ConstDecl <- "const" __ n:ConstIdentifier _ '=' _ v:IntLiteral _ ';' {
   return &ast.Constant{
     Name: n.(string),
     Value: v.(int64),
@@ -89,11 +89,15 @@ StructEnding <- "eos"
 
 //  SMInteger ::= IntType ID OptIntConstraint
 
-SMInteger <- t:IntType _ n:Identifier _ ';' {
-  return &ast.IntegerMember{
+SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
+  m := &ast.IntegerMember{
     Type: t.(*ast.IntType),
     Name: n.(string),
-  }, nil
+  }
+  if cst != nil {
+    m.Constraint = cst.(*ast.IntegerList)
+  }
+  return m, nil
 }
 
 //  IntType ::= u16
@@ -104,6 +108,52 @@ SMInteger <- t:IntType _ n:Identifier _ ';' {
 IntType <- 'u' b:("8" / "16" / "32" / "64") {
   s, err := strconv.Atoi(string(b.([]byte)))
   return &ast.IntType{Size: s}, err
+}
+
+//  OptIntConstraint ::=
+//  OptIntConstraint ::= IN [ IntList ]
+
+IntConstraint <- "IN" __ '[' _ l:IntList _ ']' {
+  return l, nil
+}
+
+//  IntList ::= IntList , IntListMember
+//  IntList ::= IntListMember
+
+IntList <- m:IntListMember ms:(_ ',' _ IntListMember)* {
+  r := []*ast.IntegerRange{m.(*ast.IntegerRange)}
+  for _, i := range ms.([]interface{}) {
+    r = append(r, i.([]interface{})[3].(*ast.IntegerRange))
+  }
+  return &ast.IntegerList{Ranges: r}, nil
+}
+
+//  IntListMember ::= Integer
+//  IntListMember ::= Integer .. Integer
+
+IntListMember <- lo:Integer hi:( ".." Integer )? {
+  r := &ast.IntegerRange{
+    Low: lo.(ast.Integer),
+  }
+  if hi != nil {
+    r.High = hi.([]interface{})[1].(ast.Integer)
+  }
+  return r, nil
+}
+
+//  Integer ::= CONST_ID
+//  Integer ::= INT
+
+Integer <- i:(IntegerConstRef / IntegerLiteral) {
+  return i, nil
+}
+
+IntegerConstRef <- n:ConstIdentifier {
+  return &ast.IntegerConstRef{Name: n.(string)}, nil
+}
+
+IntegerLiteral <- v:IntLiteral {
+  return &ast.IntegerLiteral{Value: v.(int64)}, nil
 }
 
 // Identifiers
@@ -126,11 +176,11 @@ ConstIdentifier <- [A-Z_] [A-Z0-9_]* {
 
 // Primitives
 
-IntegerLiteral <- (DecimalLiteral / HexLiteral / OctalLiteral) {
+IntLiteral <- (HexLiteral / OctalLiteral / DecimalLiteral) {
   return strconv.ParseInt(string(c.text), 0, 64)
 }
 
-DecimalLiteral <- [1-9]+ [0-9]*
+DecimalLiteral <- [0-9]+ [0-9]*
 
 HexLiteral <- "0x" [0-9a-fA-F]+
 
@@ -165,20 +215,12 @@ EOF <- !.
 //  IDList ::= IDList , ID
 //  IDRef ::= ID
 //  IDRef ::= ID . ID
-//  IntList ::= IntList , IntListMember
-//  IntList ::= IntListMember
-//  IntListMember ::= Integer
-//  IntListMember ::= Integer .. Integer
-//  Integer ::= CONST_ID
-//  Integer ::= INT
 //  LengthKW ::= ID
 //  OptAnnotation ::=
 //  OptAnnotation ::= ANNOTATION
 //  OptExtentSpec ::=
 //  OptExtentSpec ::= ... ;
 //  OptExtentSpec ::= SMRemainder ;
-//  OptIntConstraint ::=
-//  OptIntConstraint ::= IN [ IntList ]
 //  OptSemi ::=
 //  OptSemi ::= ;
 //  OptUnionLength ::=

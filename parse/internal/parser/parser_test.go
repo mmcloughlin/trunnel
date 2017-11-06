@@ -14,23 +14,29 @@ func ParseString(s string, opts ...Option) (interface{}, error) {
 }
 
 func TestConstant(t *testing.T) {
-	cases := map[string]string{
-		"decimal": `const CONST_ID = 123;`,
-		"hex":     `const CONST_ID = 0x7b;`,
-		"octal":   `const CONST_ID = 0173;`,
+	cases := []struct {
+		Name   string
+		Code   string
+		Expect int64
+	}{
+		{"decimal", `const CONST_ID = 123;`, 123},
+		{"hex", `const CONST_ID = 0x7b;`, 123},
+		{"octal", `const CONST_ID = 0173;`, 123},
+		{"zero_decimal", `const CONST_ID = 0;`, 0},
+		{"zero_hex", `const CONST_ID = 0x00;`, 0},
 	}
-	expect := &ast.File{
-		Constants: []*ast.Constant{
-			{
-				Name:  "CONST_ID",
-				Value: 123,
-			},
-		},
-	}
-	for name, src := range cases {
-		t.Run(name, func(t *testing.T) {
-			f, err := ParseString(src)
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			f, err := ParseString(c.Code)
 			require.NoError(t, err)
+			expect := &ast.File{
+				Constants: []*ast.Constant{
+					{
+						Name:  "CONST_ID",
+						Value: c.Expect,
+					},
+				},
+			}
 			assert.Equal(t, expect, f)
 		})
 	}
@@ -51,6 +57,76 @@ func TestStructBasic(t *testing.T) {
 		},
 	}
 	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestIntegerMember(t *testing.T) {
+	s := `
+	struct int_constraints {
+		u8 version_num IN [ 4, 5, 6 ];
+		u16 length IN [ 0..16384 ];
+		u16 length2 IN [ 0..MAX_LEN ];
+		u8 version_num2 IN [ 1, 2, 4..6, 9..128 ];
+	};
+	`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "int_constraints",
+				Members: []ast.StructMember{
+					&ast.IntegerMember{
+						Type: ast.U8,
+						Name: "version_num",
+						Constraint: &ast.IntegerList{
+							Ranges: []*ast.IntegerRange{
+								{Low: &ast.IntegerLiteral{Value: 4}},
+								{Low: &ast.IntegerLiteral{Value: 5}},
+								{Low: &ast.IntegerLiteral{Value: 6}},
+							},
+						},
+					},
+					&ast.IntegerMember{
+						Type: ast.U16,
+						Name: "length",
+						Constraint: &ast.IntegerList{
+							Ranges: []*ast.IntegerRange{
+								{
+									Low:  &ast.IntegerLiteral{Value: 0},
+									High: &ast.IntegerLiteral{Value: 16384},
+								},
+							},
+						},
+					},
+					&ast.IntegerMember{
+						Type: ast.U16,
+						Name: "length2",
+						Constraint: &ast.IntegerList{
+							Ranges: []*ast.IntegerRange{
+								{
+									Low:  &ast.IntegerLiteral{},
+									High: &ast.IntegerConstRef{Name: "MAX_LEN"},
+								},
+							},
+						},
+					},
+					&ast.IntegerMember{
+						Type: ast.U8,
+						Name: "version_num2",
+						Constraint: &ast.IntegerList{
+							Ranges: []*ast.IntegerRange{
+								{Low: &ast.IntegerLiteral{Value: 1}},
+								{Low: &ast.IntegerLiteral{Value: 2}},
+								{Low: &ast.IntegerLiteral{Value: 4}, High: &ast.IntegerLiteral{Value: 6}},
+								{Low: &ast.IntegerLiteral{Value: 9}, High: &ast.IntegerLiteral{Value: 128}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(s)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
