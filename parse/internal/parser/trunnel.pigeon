@@ -45,8 +45,14 @@ ConstDecl <- "const" __ n:ConstIdentifier _ '=' _ v:IntegerLiteral _ ';' {
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
 StructDecl <- "struct" __ n:Identifier __ '{' ms:StructMember* e:StructEnding? '}' ';'? {
-  fmt.Println("STRUCT")
-  return &ast.Struct{}, nil
+  m := make([]ast.StructMember, 0)
+  for _, i := range ms.([]interface{}) {
+    m = append(m, i.(ast.StructMember))
+  }
+  return &ast.Struct{
+    Name: n.(string),
+    Members: m,
+  }, nil
 }
 
 //  OptWithContext ::=
@@ -75,8 +81,10 @@ StructEnding <- "eos"
 //  SMInteger ::= IntType ID OptIntConstraint
 
 SMInteger <- t:IntType _ n:Identifier _ ';' {
-  fmt.Println(t, n)
-  return nil, nil
+  return &ast.IntegerMember{
+    Type: t.(*ast.IntType),
+    Name: n.(string),
+  }, nil
 }
 
 //  IntType ::= u16

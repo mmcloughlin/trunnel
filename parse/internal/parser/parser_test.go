@@ -40,6 +40,25 @@ func TestConstant(t *testing.T) {
 	}
 }
 
+func TestStructBasic(t *testing.T) {
+	src := `struct rgb { u8 r; u8 g; u8 b; }`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "rgb",
+				Members: []ast.StructMember{
+					&ast.IntegerMember{Type: ast.U8, Name: "r"},
+					&ast.IntegerMember{Type: ast.U8, Name: "g"},
+					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestExample(t *testing.T) {
 	_, err := ParseFile("testdata/example.trunnel")
 	require.NoError(t, err)
