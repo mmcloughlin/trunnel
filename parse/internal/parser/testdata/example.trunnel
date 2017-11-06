@@ -5,4 +5,13 @@ struct rgb {
    u8 r;
    u8 g;
    u8 b;
-}
+};
+
+const MAX_LEN = 16384;
+
+struct int_constraints {
+	u8 version_num IN [ 4, 5, 6 ];
+	u16 length IN [ 0..16384 ];
+	u16 length2 IN [ 0..MAX_LEN ];
+	u8 version_num2 IN [ 1, 2, 4..6, 9..128 ];
+};
