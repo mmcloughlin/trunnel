@@ -1,0 +1,163 @@
+{
+
+package trunnel
+
+type File struct {
+  Constants []Constant
+}
+
+type Constant struct {
+  Name string
+  Value int64
+}
+
+}
+
+//  Declarations ::= Declaration
+//  Declarations ::= Declarations Declaration
+//  File ::= Declarations
+
+File <- ds:Declaration* EOF {
+  f := &File{}
+  for _, i := range ds.([]interface{}) {
+    switch d := i.(type) {
+      case Constant:
+        f.Constants = append(f.Constants, d)
+      default:
+        return nil, errors.New("unknown declaration")
+    }
+  }
+  return f, nil
+}
+
+//  Declaration ::= OptAnnotation ConstDecl
+//  Declaration ::= OptAnnotation ContextDecl OptSemi
+//  Declaration ::= OptAnnotation StructDecl OptSemi
+//  Declaration ::= extern struct ID OptWithContext ;
+//  Declaration ::= trunnel ID IDList ;
+
+Declaration <- d:ConstDeclaration _? {
+  return d, nil
+}
+
+//  ConstDecl ::= const CONST_ID = INT ;
+
+ConstDeclaration <- "const" _ n:ConstIdentifier _ '=' _ v:IntegerLiteral ';' {
+  return Constant{
+    Name: n.(string),
+    Value: v.(int64),
+  }, nil
+}
+
+//  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
+
+// Identifiers
+
+Identifier <- [a-zA-Z_] [a-zA-Z0-9_]* {
+  return string(c.text), nil
+}
+
+ConstIdentifier <- [A-Z_] [A-Z0-9_]* {
+  return string(c.text), nil
+}
+
+// Primitives
+
+IntegerLiteral <- [0-1]+ {
+  return strconv.ParseInt(string(c.text), 10, 64)
+}
+
+// Character classes
+
+_ "whitespace" <- [ \t\n]+
+
+EOL <- '\n'
+EOF <- !.
+
+// 
+//  StructMember ::= SMArray
+//  StructMember ::= SMInteger
+//  StructMember ::= SMString
+//  StructMember ::= SMStruct
+//  StructMember ::= SMUnion
+// 
+//  SMArray ::= SMFixedArray
+//  SMArray ::= SMVarArray
+//  SMInteger ::= IntType ID OptIntConstraint
+//  SMString ::= nulterm ID
+//  SMStruct ::= StructDecl ID
+//  SMStruct ::= struct ID ID
+//  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
+// 
+//  ArrayBase ::= IntType
+//  ArrayBase ::= StructDecl
+//  ArrayBase ::= char
+//  ArrayBase ::= struct ID
+//  ContextDecl ::= context ID { ContextMembers }
+//  ContextMember ::= IntType ID ;
+//  ContextMembers ::=
+//  ContextMembers ::= ContextMembers OptAnnotation ContextMember
+//  IDList ::= ID
+//  IDList ::= IDList , ID
+//  IDRef ::= ID
+//  IDRef ::= ID . ID
+//  IntList ::= IntList , IntListMember
+//  IntList ::= IntListMember
+//  IntListMember ::= Integer
+//  IntListMember ::= Integer .. Integer
+//  IntType ::= u16
+//  IntType ::= u32
+//  IntType ::= u64
+//  IntType ::= u8
+//  Integer ::= CONST_ID
+//  Integer ::= INT
+//  LengthKW ::= ID
+//  OptAnnotation ::=
+//  OptAnnotation ::= ANNOTATION
+//  OptExtentSpec ::=
+//  OptExtentSpec ::= ... ;
+//  OptExtentSpec ::= SMRemainder ;
+//  OptIntConstraint ::=
+//  OptIntConstraint ::= IN [ IntList ]
+//  OptSemi ::=
+//  OptSemi ::= ;
+//  OptUnionLength ::=
+//  OptUnionLength ::= with LengthKW .. - Integer
+//  OptUnionLength ::= with LengthKW IDRef
+//  OptWithContext ::=
+//  OptWithContext ::= with context IDList
+//  SMFixedArray ::= ArrayBase ID [ Integer ]
+//  SMRemainder ::= OptAnnotation ArrayBase ID [ ]
+//  SMVarArray ::= ArrayBase ID [ .. - Integer ]
+//  SMVarArray ::= ArrayBase ID [ IDRef ]
+//  StructEnding ::=
+//  StructEnding ::= SMRemainder ;
+//  StructEnding ::= eos ;
+//  StructMembers ::=
+//  StructMembers ::= StructMembers OptAnnotation StructMember ;
+//  UnionCase ::= IntList
+//  UnionCase ::= default
+//  UnionField ::= SMFixedArray
+//  UnionField ::= SMInteger
+//  UnionField ::= SMString
+//  UnionField ::= SMStruct
+//  UnionField ::= SMVarArray
+//  UnionFields ::= ;
+//  UnionFields ::= SMRemainder ;
+//  UnionFields ::= UnionField ;
+//  UnionFields ::= UnionFields UnionField ;
+//  UnionFields ::= fail ;
+//  UnionFields ::= ignore ;
+//  UnionMember ::= UnionCase : UnionFields OptExtentSpec
+//  UnionMembers ::= UnionMember
+//  UnionMembers ::= UnionMembers UnionMember
+// 
+// 
+// Additional constraints:
+// 
+//    Structure declarations form a DAG.
+// 
+//    Field references in SMVarArray and SMUnion and SMUnionLength refer
+//    only to earlier-occurring fields in the same structure.
+// 
+//    No ExtentSpec unless the union has a UnionLength.
