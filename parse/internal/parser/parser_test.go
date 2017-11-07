@@ -49,7 +49,7 @@ func TestStructBasic(t *testing.T) {
 		Structs: []*ast.Struct{
 			{
 				Name: "rgb",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.IntegerMember{Type: ast.U8, Name: "r"},
 					&ast.IntegerMember{Type: ast.U8, Name: "g"},
 					&ast.IntegerMember{Type: ast.U8, Name: "b"},
@@ -68,7 +68,7 @@ func TestIntTypes(t *testing.T) {
 		Structs: []*ast.Struct{
 			{
 				Name: "s",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.IntegerMember{Type: ast.U8, Name: "a"},
 					&ast.IntegerMember{Type: ast.U16, Name: "b"},
 					&ast.IntegerMember{Type: ast.U32, Name: "c"},
@@ -95,7 +95,7 @@ func TestIntegerMember(t *testing.T) {
 		Structs: []*ast.Struct{
 			{
 				Name: "int_constraints",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.IntegerMember{
 						Type: ast.U8,
 						Name: "version_num",
@@ -152,6 +152,45 @@ func TestIntegerMember(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestInnerStructs(t *testing.T) {
+	src := `
+	struct rgb { u8 r; u8 g; u8 b; };
+	struct outer {
+		struct rgb color;
+		struct inner { u8 a; u64 b; } c;
+	};
+	`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "rgb",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "r"},
+					&ast.IntegerMember{Type: ast.U8, Name: "g"},
+					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+				},
+			},
+			{
+				Name: "outer",
+				Members: []ast.Member{
+					&ast.StructMember{Name: "color", Ref: &ast.StructRef{Name: "rgb"}},
+					&ast.StructMember{Name: "c", Ref: &ast.StructRef{Name: "inner"}},
+				},
+			},
+			{
+				Name: "inner",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "a"},
+					&ast.IntegerMember{Type: ast.U64, Name: "b"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestFixedArraySimple(t *testing.T) {
 	src := `struct fixed_arrays {
 		u8 a[8];
@@ -162,7 +201,7 @@ func TestFixedArraySimple(t *testing.T) {
 		Structs: []*ast.Struct{
 			{
 				Name: "fixed_arrays",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.FixedArrayMember{
 						Base: ast.U8,
 						Name: "a",
@@ -199,7 +238,7 @@ func TestFixedArrayStructs(t *testing.T) {
 		Structs: []*ast.Struct{
 			{
 				Name: "fixed_array_structs",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.FixedArrayMember{
 						Base: &ast.StructRef{Name: "another"},
 						Name: "x",
@@ -214,7 +253,7 @@ func TestFixedArrayStructs(t *testing.T) {
 			},
 			{
 				Name: "inner",
-				Members: []ast.StructMember{
+				Members: []ast.Member{
 					&ast.IntegerMember{Type: ast.U8, Name: "a"},
 					&ast.IntegerMember{Type: ast.U32, Name: "b"},
 				},

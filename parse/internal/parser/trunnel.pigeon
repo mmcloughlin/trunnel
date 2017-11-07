@@ -73,9 +73,9 @@ StructDeclaration <- s:StructDecl _ ';'? {
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
 StructDecl <- n:StructIdentifier __ '{' ms:StructMember* e:StructEnding? '}' {
-  m := make([]ast.StructMember, 0)
+  m := make([]ast.Member, 0)
   for _, i := range ms.([]interface{}) {
-    m = append(m, i.(ast.StructMember))
+    m = append(m, i.(ast.Member))
   }
   return &ast.Struct{
     Name: n.(string),
@@ -103,10 +103,10 @@ PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
 //  StructMember ::= SMArray
 //  StructMember ::= SMInteger
 //  StructMember ::= SMString XXX
-//  StructMember ::= SMStruct XXX
+//  StructMember ::= SMStruct
 //  StructMember ::= SMUnion XXX
 
-StructMember <- _ m:(SMArray / SMInteger) _ {
+StructMember <- _ m:(SMArray / SMInteger / SMStruct) _ {
   return m, nil
 }
 
@@ -154,6 +154,16 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
     m.Constraint = cst.(*ast.IntegerList)
   }
   return m, nil
+}
+
+//  SMStruct ::= StructDecl ID
+//  SMStruct ::= struct ID ID
+
+SMStruct <- s:StructRef __ n:Identifier _ ';' {
+  return &ast.StructMember{
+    Name: n.(string),
+    Ref: s.(*ast.StructRef),
+  }, nil
 }
 
 StructRef <- s:StructDecl {
@@ -264,8 +274,6 @@ EOF <- !.
 //
 //
 //  SMString ::= nulterm ID
-//  SMStruct ::= StructDecl ID
-//  SMStruct ::= struct ID ID
 //  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
 //
 //  ContextDecl ::= context ID { ContextMembers }

@@ -17,11 +17,11 @@ type Constant struct {
 // Struct is a struct declaration.
 type Struct struct {
 	Name    string
-	Members []StructMember
+	Members []Member
 }
 
-// StructMember is a field in a struct definition.
-type StructMember interface{}
+// Member is a field in a struct definition.
+type Member interface{}
 
 // IntegerMember is an integer struct member.
 type IntegerMember struct {
@@ -37,6 +37,12 @@ type FixedArrayMember struct {
 	Base ArrayBase
 	Name string
 	Size Integer
+}
+
+// StructMember is a struct type member of a struct.
+type StructMember struct {
+	Ref  *StructRef
+	Name string
 }
 
 // CharType represents the character type.

@@ -15,3 +15,10 @@ struct int_constraints {
 	u16 length2 IN [ 0..MAX_LEN ];
 	u8 version_num2 IN [ 1, 2, 4..6, 9..128 ];
 };
+
+struct fixed_length_arrays {
+    u8 ipv6_addr[16];
+    u32 elements[N_ELEMENTS];
+    struct rgb colors[2];
+    char hostname[0x40];
+};
