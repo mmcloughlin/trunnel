@@ -22,3 +22,15 @@ struct fixed_length_arrays {
     struct rgb colors[2];
     char hostname[0x40];
 };
+
+struct encrypted {
+   u8 salt[16];
+   u8 message[..-32];
+   u8 mac[32];
+}
+
+struct var_length_array {
+  u16 length;
+  u8 bytes[length];
+  u64 bignums[length];
+}

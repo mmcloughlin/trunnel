@@ -39,6 +39,13 @@ type FixedArrayMember struct {
 	Size Integer
 }
 
+// VarArrayMember is a variable-length array struct member.
+type VarArrayMember struct {
+	Base       ArrayBase
+	Name       string
+	Constraint LengthConstraint
+}
+
 // NulTermString is a NUL-terminated string struct member.
 type NulTermString struct {
 	Name string
@@ -99,4 +106,15 @@ type IntegerRange struct {
 // IntegerList specifies a set of integers.
 type IntegerList struct {
 	Ranges []*IntegerRange
+}
+
+type LengthConstraint interface{}
+
+type Leftover struct {
+	Num Integer
+}
+
+type IDRef struct {
+	Scope string
+	Name  string
 }

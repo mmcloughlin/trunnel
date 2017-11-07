@@ -285,6 +285,68 @@ func TestFixedArrayStructs(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestVarLengthArray(t *testing.T) {
+	src := `struct var_length_array {
+		u16 length;
+		u8 bytes[length];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "var_length_array",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U16, Name: "length"},
+					&ast.VarArrayMember{
+						Base:       ast.U8,
+						Name:       "bytes",
+						Constraint: &ast.IDRef{Name: "length"},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestLeftoverLengthArray(t *testing.T) {
+	src := `struct encrypted {
+		u8 salt[16];
+		u8 message[..-32];
+		u8 mac[32];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "encrypted",
+				Members: []ast.Member{
+					&ast.FixedArrayMember{
+						Base: ast.U8,
+						Name: "salt",
+						Size: &ast.IntegerLiteral{Value: 16},
+					},
+					&ast.VarArrayMember{
+						Base: ast.U8,
+						Name: "message",
+						Constraint: &ast.Leftover{
+							Num: &ast.IntegerLiteral{Value: 32},
+						},
+					},
+					&ast.FixedArrayMember{
+						Base: ast.U8,
+						Name: "mac",
+						Size: &ast.IntegerLiteral{Value: 32},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestPragma(t *testing.T) {
 	cases := []struct {
 		Name    string
