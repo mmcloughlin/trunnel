@@ -102,11 +102,11 @@ PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
 
 //  StructMember ::= SMArray
 //  StructMember ::= SMInteger
-//  StructMember ::= SMString XXX
+//  StructMember ::= SMString
 //  StructMember ::= SMStruct
 //  StructMember ::= SMUnion XXX
 
-StructMember <- _ m:(SMArray / SMInteger / SMStruct) _ {
+StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct) _ {
   return m, nil
 }
 
@@ -154,6 +154,12 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
     m.Constraint = cst.(*ast.IntegerList)
   }
   return m, nil
+}
+
+//  SMString ::= nulterm ID
+
+SMString <- "nulterm" __ n:Identifier _ ';' {
+  return &ast.NulTermString{Name: n.(string)}, nil
 }
 
 //  SMStruct ::= StructDecl ID
@@ -273,7 +279,6 @@ EOF <- !.
 
 //
 //
-//  SMString ::= nulterm ID
 //  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
 //
 //  ContextDecl ::= context ID { ContextMembers }

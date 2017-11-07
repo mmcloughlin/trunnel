@@ -39,6 +39,11 @@ type FixedArrayMember struct {
 	Size Integer
 }
 
+// NulTermString is a NUL-terminated string struct member.
+type NulTermString struct {
+	Name string
+}
+
 // StructMember is a struct type member of a struct.
 type StructMember struct {
 	Ref  *StructRef

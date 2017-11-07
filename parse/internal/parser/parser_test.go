@@ -152,7 +152,27 @@ func TestIntegerMember(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
-func TestInnerStructs(t *testing.T) {
+func TestNulTermString(t *testing.T) {
+	src := `struct nul_term_string {
+		nulterm str;
+	};
+	`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "nul_term_string",
+				Members: []ast.Member{
+					&ast.NulTermString{Name: "str"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestNestedStructs(t *testing.T) {
 	src := `
 	struct rgb { u8 r; u8 g; u8 b; };
 	struct outer {
