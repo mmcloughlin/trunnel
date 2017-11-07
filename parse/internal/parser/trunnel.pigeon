@@ -138,14 +138,10 @@ SMFixedArray <- b:ArrayBase __ n:Identifier _ '[' s:Integer ']' {
 //  ArrayBase ::= char
 //  ArrayBase ::= struct ID
 
-ArrayBase <- t:(IntType / CharType / InlineStructDecl / StructIdentifier) {
+ArrayBase <- t:(IntType / CharType / StructRef) {
   return t, nil
 }
 
-InlineStructDecl <- s:StructDecl {
-  c.addLingeringDeclaration(s)
-  return s.(*ast.Struct).Name, nil
-}
 
 //  SMInteger ::= IntType ID OptIntConstraint
 
@@ -158,6 +154,13 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
     m.Constraint = cst.(*ast.IntegerList)
   }
   return m, nil
+}
+
+StructRef <- s:StructDecl {
+  c.addLingeringDeclaration(s)
+  return &ast.StructRef{Name: s.(*ast.Struct).Name}, nil
+} / n:StructIdentifier {
+  return &ast.StructRef{Name: n.(string)}, nil
 }
 
 CharType <- "char" {

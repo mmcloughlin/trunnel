@@ -55,6 +55,11 @@ var (
 	U64 = &IntType{Size: 64}
 )
 
+// StructRef represents a reference to a struct type.
+type StructRef struct {
+	Name string
+}
+
 // Pragma represents a directive to trunnel.
 type Pragma struct {
 	Type    string

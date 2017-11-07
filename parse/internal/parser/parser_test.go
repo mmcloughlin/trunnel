@@ -201,12 +201,12 @@ func TestFixedArrayStructs(t *testing.T) {
 				Name: "fixed_array_structs",
 				Members: []ast.StructMember{
 					&ast.FixedArrayMember{
-						Base: "another",
+						Base: &ast.StructRef{Name: "another"},
 						Name: "x",
 						Size: &ast.IntegerLiteral{Value: 3},
 					},
 					&ast.FixedArrayMember{
-						Base: "inner",
+						Base: &ast.StructRef{Name: "inner"},
 						Name: "y",
 						Size: &ast.IntegerLiteral{Value: 7},
 					},
