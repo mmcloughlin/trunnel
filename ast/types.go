@@ -119,9 +119,37 @@ type IntegerRange struct {
 	High Integer
 }
 
+func NewIntegerRange(lo, hi Integer) *IntegerRange {
+	return &IntegerRange{
+		Low:  lo,
+		High: hi,
+	}
+}
+
+func NewIntegerRangeLiteral(lo, hi int64) *IntegerRange {
+	return NewIntegerRange(
+		&IntegerLiteral{Value: lo},
+		&IntegerLiteral{Value: hi},
+	)
+}
+
+func NewIntegerRangeSingle(i Integer) *IntegerRange {
+	return NewIntegerRange(i, nil)
+}
+
+func NewIntegerRangeSingleLiteral(v int64) *IntegerRange {
+	return NewIntegerRangeSingle(&IntegerLiteral{Value: v})
+}
+
 // IntegerList specifies a set of integers.
 type IntegerList struct {
 	Ranges []*IntegerRange
+}
+
+func NewIntegerList(ranges ...*IntegerRange) *IntegerList {
+	return &IntegerList{
+		Ranges: ranges,
+	}
 }
 
 type LengthConstraint interface{}

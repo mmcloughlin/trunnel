@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -386,9 +385,70 @@ func TestUnion(t *testing.T) {
 			default : fail;
 		};
 	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "has_union",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "tag"},
+					&ast.UnionMember{
+						Name: "addr",
+						Tag:  &ast.IDRef{Name: "tag"},
+						Cases: []interface{}{
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(4)),
+								Fields: []ast.Member{
+									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
+								},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(5)),
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(6)),
+								Fields: []ast.Member{
+									&ast.FixedArrayMember{
+										Base: ast.U8,
+										Name: "ipv6_addr",
+										Size: &ast.IntegerLiteral{Value: 16},
+									},
+								},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(
+									ast.NewIntegerRangeSingleLiteral(0xf0),
+									ast.NewIntegerRangeSingleLiteral(0xf1),
+								),
+								Fields: []ast.Member{
+									&ast.IntegerMember{Type: ast.U8, Name: "hostname_len"},
+									&ast.VarArrayMember{
+										Base:       &ast.CharType{},
+										Name:       "hostname",
+										Constraint: &ast.IDRef{Name: "hostname_len"},
+									},
+								},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(
+									ast.NewIntegerRangeLiteral(0xf2, 0xff),
+								),
+								Fields: []ast.Member{
+									&ast.StructMember{Name: "ext", Ref: &ast.StructRef{Name: "extension"}},
+								},
+							},
+							&ast.UnionCase{
+								Case:   nil, // default
+								Fields: &ast.Fail{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 	f, err := ParseString(src)
 	require.NoError(t, err)
-	spew.Dump(f)
+	assert.Equal(t, expect, f)
 }
 
 func TestPragma(t *testing.T) {
