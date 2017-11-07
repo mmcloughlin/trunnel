@@ -1,0 +1,6 @@
+struct ellipsis_after_fail {
+    u8 tag;
+    union addr[tag] {
+       4 : fail; ...;
+    };
+}

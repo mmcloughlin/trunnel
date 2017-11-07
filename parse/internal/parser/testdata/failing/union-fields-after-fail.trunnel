@@ -1,0 +1,6 @@
+struct field_after_fail {
+    u8 tag;
+    union addr[tag] {
+       4 : fail; u8 b;
+    };
+}

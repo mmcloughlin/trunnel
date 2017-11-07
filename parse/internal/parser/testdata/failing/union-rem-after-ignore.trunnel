@@ -1,0 +1,6 @@
+struct rem_after_ignore {
+    u8 tag;
+    union addr[tag] {
+       4 : ignore; u8 rem[];
+    };
+}

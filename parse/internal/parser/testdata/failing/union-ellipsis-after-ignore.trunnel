@@ -1,0 +1,6 @@
+struct ellipsis_after_ignore {
+    u8 tag;
+    union addr[tag] {
+       4 : ignore; ...;
+    };
+}
