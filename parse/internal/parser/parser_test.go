@@ -335,6 +335,29 @@ func TestRemainderArray(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestEOS(t *testing.T) {
+	src := ` struct fourbytes {
+		u16 x;
+		u16 y;
+		eos;
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "fourbytes",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U16, Name: "x"},
+					&ast.IntegerMember{Type: ast.U16, Name: "y"},
+					&ast.EOS{},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestVarLengthString(t *testing.T) {
 	src := `struct pascal_string {
 		u8 hostname_len;

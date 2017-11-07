@@ -46,6 +46,9 @@ type VarArrayMember struct {
 	Constraint LengthConstraint // nil means remainder
 }
 
+// EOS signals "end of struct".
+type EOS struct{}
+
 // NulTermString is a NUL-terminated string struct member.
 type NulTermString struct {
 	Name string

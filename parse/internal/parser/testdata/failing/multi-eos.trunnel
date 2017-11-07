@@ -1,0 +1,5 @@
+struct multi_eos {
+  u8 x;
+  eos;
+  eos;
+};

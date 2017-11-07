@@ -1,0 +1,5 @@
+struct misplaced_eos {
+  u8 x;
+  eos;
+  u8 y;
+};

@@ -121,7 +121,9 @@ StructEnding <- _ e:(SMRemainder / StructEOS) _ ';' {
   return e, nil
 }
 
-StructEOS <- "eos"
+StructEOS <- "eos" {
+  return &ast.EOS{}, nil
+}
 
 //  SMArray ::= SMFixedArray
 //  SMArray ::= SMVarArray
