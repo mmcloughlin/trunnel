@@ -1,0 +1,4 @@
+struct multi_remainder_arrays {
+  u8 remaining_bytes[];
+  u32 remaining_words[];
+};

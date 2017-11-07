@@ -72,10 +72,13 @@ StructDeclaration <- s:StructDecl _ ';'? {
 
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
-StructDecl <- n:StructIdentifier __ '{' ms:StructMember* _ e:StructEnding? '}' {
+StructDecl <- n:StructIdentifier __ '{' ms:StructMember* _ e:StructEnding? _ '}' {
   m := make([]ast.Member, 0)
   for _, i := range ms.([]interface{}) {
     m = append(m, i.(ast.Member))
+  }
+  if e != nil {
+    m = append(m, e.(ast.Member))
   }
   return &ast.Struct{
     Name: n.(string),
@@ -114,9 +117,11 @@ StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct / SMUnion) _ ';' 
 //  StructEnding ::= SMRemainder ;
 //  StructEnding ::= eos ;
 
-StructEnding <- _ StructEOS _
+StructEnding <- _ e:(SMRemainder / StructEOS) _ ';' {
+  return e, nil
+}
 
-StructEOS <- "eos" _ ';'
+StructEOS <- "eos"
 
 //  SMArray ::= SMFixedArray
 //  SMArray ::= SMVarArray
@@ -152,6 +157,16 @@ LengthConstraint <- l:(Leftover / IDRef) {
 
 Leftover <- "..-" i:Integer {
   return &ast.Leftover{Num: i.(ast.Integer)}, nil
+}
+
+//  SMRemainder ::= OptAnnotation ArrayBase ID [ ] XXX annotation
+
+SMRemainder <- b:ArrayBase __ n:Identifier _ '[' _ ']' {
+  return &ast.VarArrayMember{
+    Base: b.(ast.ArrayBase),
+    Name: n.(string),
+    Constraint: nil,
+  }, nil
 }
 
 //  ArrayBase ::= IntType
@@ -398,7 +413,6 @@ EOF <- !.
 //  OptExtentSpec ::= SMRemainder ;
 //  OptSemi ::=
 //  OptSemi ::= ;
-//  SMRemainder ::= OptAnnotation ArrayBase ID [ ]
 //
 //
 // Additional constraints:

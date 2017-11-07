@@ -310,6 +310,31 @@ func TestVarLengthArray(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestRemainderArray(t *testing.T) {
+	src := `struct remainder_array {
+		u8 x;
+		u8 rest[];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "remainder_array",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "x"},
+					&ast.VarArrayMember{
+						Base:       ast.U8,
+						Name:       "rest",
+						Constraint: nil,
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestVarLengthString(t *testing.T) {
 	src := `struct pascal_string {
 		u8 hostname_len;

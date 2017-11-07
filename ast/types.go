@@ -43,7 +43,7 @@ type FixedArrayMember struct {
 type VarArrayMember struct {
 	Base       ArrayBase
 	Name       string
-	Constraint LengthConstraint
+	Constraint LengthConstraint // nil means remainder
 }
 
 // NulTermString is a NUL-terminated string struct member.

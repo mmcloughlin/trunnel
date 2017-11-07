@@ -34,3 +34,16 @@ struct var_length_array {
   u8 bytes[length];
   u64 bignums[length];
 }
+
+struct has_union {
+	u8 tag;
+	union addr[tag] {
+		4 : u32 ipv4_addr;
+		5 : ;
+		6 : u8 ipv6_addr[16];
+		0xf0,0xf1 : u8 hostname_len;
+				char hostname[hostname_len];
+		0xF2 .. 0xFF : struct extension ext;
+		default : fail;
+	};
+}

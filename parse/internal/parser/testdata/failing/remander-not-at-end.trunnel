@@ -1,0 +1,5 @@
+struct remainder_not_at_end {
+  u8 a;
+  u8 b[];
+  u8 c;
+};
