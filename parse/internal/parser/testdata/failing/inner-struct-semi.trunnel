@@ -1,0 +1,3 @@
+struct inner_struct_with_semi_colon {
+  struct inner { u8 a; u32 b; }; x[3];
+}

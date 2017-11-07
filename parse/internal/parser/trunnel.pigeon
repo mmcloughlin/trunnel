@@ -2,6 +2,23 @@
 
 package parser
 
+const lingeringDeclarationsKey = "lingering_declarations"
+
+func (c *current) addLingeringDeclaration(d interface{}) {
+  var ds []interface{}
+  if e, ok := c.state[lingeringDeclarationsKey]; ok {
+    ds = e.([]interface{})
+  }
+  c.state[lingeringDeclarationsKey] = append(ds, d)
+}
+
+func (c *current) getLingeringDeclarations() []interface{} {
+  if ds, ok := c.state[lingeringDeclarationsKey]; ok {
+    return ds.([]interface{})
+  }
+  return []interface{}{}
+}
+
 }
 
 //  Declarations ::= Declaration
@@ -10,7 +27,9 @@ package parser
 
 File <- ds:Declaration* EOF {
   f := &ast.File{}
-  for _, i := range ds.([]interface{}) {
+  lingering := c.getLingeringDeclarations()
+  decls := append(ds.([]interface{}), lingering...)
+  for _, i := range decls {
     switch d := i.(type) {
       case *ast.Constant:
         f.Constants = append(f.Constants, d)
@@ -31,22 +50,29 @@ File <- ds:Declaration* EOF {
 //  Declaration ::= extern struct ID OptWithContext ; XXX
 //  Declaration ::= trunnel ID IDList ;
 
-Declaration <- _ d:(ConstDecl / StructDecl / PragmaDecl) _ {
+Declaration <- _ d:(ConstDeclaration / StructDeclaration / PragmaDeclaration) _ {
   return d, nil
 }
 
 //  ConstDecl ::= const CONST_ID = INT ;
 
-ConstDecl <- "const" __ n:ConstIdentifier _ '=' _ v:IntLiteral _ ';' {
+ConstDeclaration <- "const" __ n:ConstIdentifier _ '=' _ v:IntLiteral _ ';' {
   return &ast.Constant{
     Name: n.(string),
     Value: v.(int64),
   }, nil
 }
 
+// StructDeclaration is a top-level struct declaration, which may be followed
+// by a semi-colon.
+
+StructDeclaration <- s:StructDecl _ ';'? {
+  return s, nil
+}
+
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
-StructDecl <- "struct" __ n:Identifier __ '{' ms:StructMember* e:StructEnding? '}' ';'? {
+StructDecl <- n:StructIdentifier __ '{' ms:StructMember* e:StructEnding? '}' {
   m := make([]ast.StructMember, 0)
   for _, i := range ms.([]interface{}) {
     m = append(m, i.(ast.StructMember))
@@ -57,7 +83,11 @@ StructDecl <- "struct" __ n:Identifier __ '{' ms:StructMember* e:StructEnding? '
   }, nil
 }
 
-PragmaDecl <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
+StructIdentifier <- "struct" __ n:Identifier {
+  return n, nil
+}
+
+PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
   return &ast.Pragma{
     Type: n.(string),
     Options: opts.([]string),
@@ -106,10 +136,15 @@ SMFixedArray <- b:ArrayBase __ n:Identifier _ '[' s:Integer ']' {
 //  ArrayBase ::= IntType
 //  ArrayBase ::= StructDecl XXX
 //  ArrayBase ::= char
-//  ArrayBase ::= struct ID XXX
+//  ArrayBase ::= struct ID
 
-ArrayBase <- t:(IntType / CharType) {
+ArrayBase <- t:(IntType / CharType / InlineStructDecl / StructIdentifier) {
   return t, nil
+}
+
+InlineStructDecl <- s:StructDecl {
+  c.addLingeringDeclaration(s)
+  return s.(*ast.Struct).Name, nil
 }
 
 //  SMInteger ::= IntType ID OptIntConstraint

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -186,6 +187,45 @@ func TestFixedArraySimple(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestFixedArrayStructs(t *testing.T) {
+	src := `struct fixed_array_structs {
+		struct another x[3];
+		struct inner {
+			u8 a;
+			u32 b;
+		} y[7];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "fixed_array_structs",
+				Members: []ast.StructMember{
+					&ast.FixedArrayMember{
+						Base: "another",
+						Name: "x",
+						Size: &ast.IntegerLiteral{Value: 3},
+					},
+					&ast.FixedArrayMember{
+						Base: "inner",
+						Name: "y",
+						Size: &ast.IntegerLiteral{Value: 7},
+					},
+				},
+			},
+			{
+				Name: "inner",
+				Members: []ast.StructMember{
+					&ast.IntegerMember{Type: ast.U8, Name: "a"},
+					&ast.IntegerMember{Type: ast.U32, Name: "b"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestPragma(t *testing.T) {
 	cases := []struct {
 		Name    string
@@ -220,7 +260,24 @@ func TestPragma(t *testing.T) {
 	}
 }
 
-func TestExample(t *testing.T) {
-	_, err := ParseFile("testdata/example.trunnel")
+func TestValidFiles(t *testing.T) {
+	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
 	require.NoError(t, err)
+	for _, filename := range filenames {
+		t.Run(filename, func(t *testing.T) {
+			_, err := ParseFile(filename)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestFailingFiles(t *testing.T) {
+	filenames, err := filepath.Glob("testdata/failing/*.trunnel")
+	require.NoError(t, err)
+	for _, filename := range filenames {
+		t.Run(filename, func(t *testing.T) {
+			_, err := ParseFile(filename)
+			assert.Error(t, err)
+		})
+	}
 }

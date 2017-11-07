@@ -32,6 +32,7 @@ type IntegerMember struct {
 
 type ArrayBase interface{}
 
+// FixedArrayMember is a fixed-length array struct member.
 type FixedArrayMember struct {
 	Base ArrayBase
 	Name string
