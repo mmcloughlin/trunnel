@@ -61,6 +61,26 @@ func TestStructBasic(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestIntTypes(t *testing.T) {
+	src := `struct s { u8 a; u16 b; u32 c; u64 d; }`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "s",
+				Members: []ast.StructMember{
+					&ast.IntegerMember{Type: ast.U8, Name: "a"},
+					&ast.IntegerMember{Type: ast.U16, Name: "b"},
+					&ast.IntegerMember{Type: ast.U32, Name: "c"},
+					&ast.IntegerMember{Type: ast.U64, Name: "d"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestIntegerMember(t *testing.T) {
 	s := `
 	struct int_constraints {
@@ -127,6 +147,41 @@ func TestIntegerMember(t *testing.T) {
 		},
 	}
 	f, err := ParseString(s)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestFixedArraySimple(t *testing.T) {
+	src := `struct fixed_arrays {
+		u8 a[8];
+		u32 b[SIZE];
+		char s[13];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "fixed_arrays",
+				Members: []ast.StructMember{
+					&ast.FixedArrayMember{
+						Base: ast.U8,
+						Name: "a",
+						Size: &ast.IntegerLiteral{Value: 8},
+					},
+					&ast.FixedArrayMember{
+						Base: ast.U32,
+						Name: "b",
+						Size: &ast.IntegerConstRef{Name: "SIZE"},
+					},
+					&ast.FixedArrayMember{
+						Base: &ast.CharType{},
+						Name: "s",
+						Size: &ast.IntegerLiteral{Value: 13},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }

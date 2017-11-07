@@ -30,6 +30,17 @@ type IntegerMember struct {
 	Constraint *IntegerList
 }
 
+type ArrayBase interface{}
+
+type FixedArrayMember struct {
+	Base ArrayBase
+	Name string
+	Size Integer
+}
+
+// CharType represents the character type.
+type CharType struct{}
+
 // IntType represents an integer type (u8, u16, u32 and u64).
 type IntType struct {
 	Size int

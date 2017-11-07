@@ -26,9 +26,9 @@ File <- ds:Declaration* EOF {
 }
 
 //  Declaration ::= OptAnnotation ConstDecl
-//  Declaration ::= OptAnnotation ContextDecl OptSemi
+//  Declaration ::= OptAnnotation ContextDecl OptSemi XXX
 //  Declaration ::= OptAnnotation StructDecl OptSemi
-//  Declaration ::= extern struct ID OptWithContext ;
+//  Declaration ::= extern struct ID OptWithContext ; XXX
 //  Declaration ::= trunnel ID IDList ;
 
 Declaration <- _ d:(ConstDecl / StructDecl / PragmaDecl) _ {
@@ -65,19 +65,18 @@ PragmaDecl <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
 }
 
 //  OptWithContext ::=
-//  OptWithContext ::= with context IDList
-//  TODO(mbm): context support
+//  OptWithContext ::= with context IDList XXX
 
 //  StructMembers ::=
-//  StructMembers ::= StructMembers OptAnnotation StructMember ;
+//  StructMembers ::= StructMembers OptAnnotation StructMember ; XXX
 
 //  StructMember ::= SMArray
 //  StructMember ::= SMInteger
-//  StructMember ::= SMString
-//  StructMember ::= SMStruct
-//  StructMember ::= SMUnion
+//  StructMember ::= SMString XXX
+//  StructMember ::= SMStruct XXX
+//  StructMember ::= SMUnion XXX
 
-StructMember <- _ m:SMInteger _ {
+StructMember <- _ m:(SMArray / SMInteger) _ {
   return m, nil
 }
 
@@ -86,6 +85,32 @@ StructMember <- _ m:SMInteger _ {
 //  StructEnding ::= eos ;
 
 StructEnding <- "eos"
+
+//  SMArray ::= SMFixedArray
+//  SMArray ::= SMVarArray XXX
+
+SMArray <- a:SMFixedArray _ ';' {
+  return a, nil
+}
+
+//  SMFixedArray ::= ArrayBase ID [ Integer ]
+
+SMFixedArray <- b:ArrayBase __ n:Identifier _ '[' s:Integer ']' {
+  return &ast.FixedArrayMember{
+    Base: b.(ast.ArrayBase),
+    Name: n.(string),
+    Size: s.(ast.Integer),
+  }, nil
+}
+
+//  ArrayBase ::= IntType
+//  ArrayBase ::= StructDecl XXX
+//  ArrayBase ::= char
+//  ArrayBase ::= struct ID XXX
+
+ArrayBase <- t:(IntType / CharType) {
+  return t, nil
+}
 
 //  SMInteger ::= IntType ID OptIntConstraint
 
@@ -98,6 +123,10 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
     m.Constraint = cst.(*ast.IntegerList)
   }
   return m, nil
+}
+
+CharType <- "char" {
+  return &ast.CharType{}, nil
 }
 
 //  IntType ::= u16
@@ -196,17 +225,11 @@ EOF <- !.
 
 //
 //
-//  SMArray ::= SMFixedArray
-//  SMArray ::= SMVarArray
 //  SMString ::= nulterm ID
 //  SMStruct ::= StructDecl ID
 //  SMStruct ::= struct ID ID
 //  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
 //
-//  ArrayBase ::= IntType
-//  ArrayBase ::= StructDecl
-//  ArrayBase ::= char
-//  ArrayBase ::= struct ID
 //  ContextDecl ::= context ID { ContextMembers }
 //  ContextMember ::= IntType ID ;
 //  ContextMembers ::=
@@ -226,7 +249,6 @@ EOF <- !.
 //  OptUnionLength ::=
 //  OptUnionLength ::= with LengthKW .. - Integer
 //  OptUnionLength ::= with LengthKW IDRef
-//  SMFixedArray ::= ArrayBase ID [ Integer ]
 //  SMRemainder ::= OptAnnotation ArrayBase ID [ ]
 //  SMVarArray ::= ArrayBase ID [ .. - Integer ]
 //  SMVarArray ::= ArrayBase ID [ IDRef ]
