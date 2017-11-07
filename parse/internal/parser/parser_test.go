@@ -11,7 +11,7 @@ import (
 )
 
 func ParseString(s string, opts ...Option) (interface{}, error) {
-	return ParseReader("", strings.NewReader(s))
+	return ParseReader("", strings.NewReader(s), opts...)
 }
 
 func TestConstant(t *testing.T) {
@@ -339,4 +339,22 @@ func TestFailingFiles(t *testing.T) {
 			assert.Error(t, err)
 		})
 	}
+}
+
+// TestOptions is primarily provided for test coverage of the generated Option
+// functions.
+func TestOptions(t *testing.T) {
+	opts := []Option{
+		AllowInvalidUTF8(false),
+		Debug(false),
+		Entrypoint(""),
+		MaxExpressions(0),
+		Memoize(false),
+		Recover(true),
+		GlobalStore("foo", "baz"),
+		InitState("blah", 42),
+		Statistics(&Stats{}, "hmm"),
+	}
+	_, err := ParseString("const A = 1337;", opts...)
+	assert.NoError(t, err)
 }
