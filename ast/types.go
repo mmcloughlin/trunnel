@@ -57,6 +57,22 @@ type StructMember struct {
 	Name string
 }
 
+type UnionMember struct {
+	Name   string
+	Tag    *IDRef
+	Length LengthConstraint
+	Cases  interface{}
+}
+
+type UnionCase struct {
+	Case   *IntegerList // nil is the default case
+	Fields interface{}
+}
+
+type Fail struct{}
+
+type Ignore struct{}
+
 // CharType represents the character type.
 type CharType struct{}
 

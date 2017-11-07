@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -310,6 +311,31 @@ func TestVarLengthArray(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestVarLengthString(t *testing.T) {
+	src := `struct pascal_string {
+		u8 hostname_len;
+		char hostname[hostname_len];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "pascal_string",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "hostname_len"},
+					&ast.VarArrayMember{
+						Base:       &ast.CharType{},
+						Name:       "hostname",
+						Constraint: &ast.IDRef{Name: "hostname_len"},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestLeftoverLengthArray(t *testing.T) {
 	src := `struct encrypted {
 		u8 salt[16];
@@ -345,6 +371,24 @@ func TestLeftoverLengthArray(t *testing.T) {
 	f, err := ParseString(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
+}
+
+func TestUnion(t *testing.T) {
+	src := `struct has_union {
+		u8 tag;
+		union addr[tag] {
+			4 : u32 ipv4_addr;
+			5 : ;
+			6 : u8 ipv6_addr[16];
+			0xf0,0xf1 : u8 hostname_len;
+					char hostname[hostname_len];
+			0xF2 .. 0xFF : struct extension ext;
+			default : fail;
+		};
+	}`
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	spew.Dump(f)
 }
 
 func TestPragma(t *testing.T) {

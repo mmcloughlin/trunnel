@@ -72,7 +72,7 @@ StructDeclaration <- s:StructDecl _ ';'? {
 
 //  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
 
-StructDecl <- n:StructIdentifier __ '{' ms:StructMember* e:StructEnding? '}' {
+StructDecl <- n:StructIdentifier __ '{' ms:StructMember* _ e:StructEnding? '}' {
   m := make([]ast.Member, 0)
   for _, i := range ms.([]interface{}) {
     m = append(m, i.(ast.Member))
@@ -106,7 +106,7 @@ PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
 //  StructMember ::= SMStruct
 //  StructMember ::= SMUnion XXX
 
-StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct) _ {
+StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct / SMUnion) _ ';' {
   return m, nil
 }
 
@@ -114,12 +114,14 @@ StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct) _ {
 //  StructEnding ::= SMRemainder ;
 //  StructEnding ::= eos ;
 
-StructEnding <- "eos"
+StructEnding <- _ StructEOS _
+
+StructEOS <- "eos" _ ';'
 
 //  SMArray ::= SMFixedArray
 //  SMArray ::= SMVarArray
 
-SMArray <- a:(SMFixedArray / SMVarArray) _ ';' {
+SMArray <- a:(SMFixedArray / SMVarArray) {
   return a, nil
 }
 
@@ -164,7 +166,7 @@ ArrayBase <- t:(IntType / CharType / StructRef) {
 
 //  SMInteger ::= IntType ID OptIntConstraint
 
-SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
+SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? {
   m := &ast.IntegerMember{
     Type: t.(*ast.IntType),
     Name: n.(string),
@@ -177,18 +179,88 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? _ ';' {
 
 //  SMString ::= nulterm ID
 
-SMString <- "nulterm" __ n:Identifier _ ';' {
+SMString <- "nulterm" __ n:Identifier {
   return &ast.NulTermString{Name: n.(string)}, nil
 }
 
 //  SMStruct ::= StructDecl ID
 //  SMStruct ::= struct ID ID
 
-SMStruct <- s:StructRef __ n:Identifier _ ';' {
+SMStruct <- s:StructRef __ n:Identifier {
   return &ast.StructMember{
     Name: n.(string),
     Ref: s.(*ast.StructRef),
   }, nil
+}
+
+//  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
+
+SMUnion <- "union" __ n:Identifier _ '[' t:IDRef ']' _ l:UnionLength? _ '{' _ cs:UnionMember* _ '}' {
+  u := &ast.UnionMember{
+    Name: n.(string),
+    Tag: t.(*ast.IDRef),
+    Cases: cs,
+  }
+  if l != nil {
+    u.Length = l.(ast.LengthConstraint)
+  }
+  return u, nil
+}
+
+UnionLength <- "with" __ "length" __ l:LengthConstraint {
+  return l, nil
+}
+
+//  UnionMember ::= UnionCase : UnionFields OptExtentSpec XXX extent spec
+
+UnionMember <- _ cse:UnionCase _ ':' _ fs:UnionFields _ {
+  uc := &ast.UnionCase{
+    Fields: fs,
+  }
+  if cse != nil {
+    uc.Case = cse.(*ast.IntegerList)
+  }
+  return uc, nil
+}
+
+//  UnionCase ::= IntList
+//  UnionCase ::= default
+
+UnionCase <- l:IntList {
+  return l, nil
+} / "default" {
+  return nil, nil
+}
+
+//  UnionFields ::= ; XXX
+//  UnionFields ::= SMRemainder ; XXX
+//  UnionFields ::= UnionField ; XXX
+//  UnionFields ::= UnionFields UnionField ; XXX
+//  UnionFields ::= fail ; XXX
+//  UnionFields ::= ignore ; XXX
+
+UnionFields <- _ ';' {
+  return nil, nil
+} / ms:UnionField+ {
+  fs := []ast.Member{}
+  for _, i := range ms.([]interface{}) {
+    fs = append(fs, i.(ast.Member))
+  }
+  return fs, nil
+} / "fail" _ ';' {
+  return &ast.Fail{}, nil
+} / "ignore" _ ';' {
+  return &ast.Ignore{}, nil
+}
+
+//  UnionField ::= SMFixedArray
+//  UnionField ::= SMInteger
+//  UnionField ::= SMString
+//  UnionField ::= SMStruct
+//  UnionField ::= SMVarArray
+
+UnionField <- _ m:(SMFixedArray / SMInteger / SMString / SMStruct / SMVarArray) _ ';' {
+  return m, nil
 }
 
 StructRef <- s:StructDecl {
@@ -233,12 +305,12 @@ IntList <- m:IntListMember ms:(_ ',' _ IntListMember)* {
 //  IntListMember ::= Integer
 //  IntListMember ::= Integer .. Integer
 
-IntListMember <- lo:Integer hi:( ".." Integer )? {
+IntListMember <- lo:Integer hi:( _ ".." _ Integer )? {
   r := &ast.IntegerRange{
     Low: lo.(ast.Integer),
   }
   if hi != nil {
-    r.High = hi.([]interface{})[1].(ast.Integer)
+    r.High = hi.([]interface{})[3].(ast.Integer)
   }
   return r, nil
 }
@@ -311,7 +383,6 @@ EOF <- !.
 
 //
 //
-//  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
 //
 //  ContextDecl ::= context ID { ContextMembers }
 //  ContextMember ::= IntType ID ;
@@ -327,26 +398,7 @@ EOF <- !.
 //  OptExtentSpec ::= SMRemainder ;
 //  OptSemi ::=
 //  OptSemi ::= ;
-//  OptUnionLength ::=
-//  OptUnionLength ::= with LengthKW .. - Integer
-//  OptUnionLength ::= with LengthKW IDRef
 //  SMRemainder ::= OptAnnotation ArrayBase ID [ ]
-//  UnionCase ::= IntList
-//  UnionCase ::= default
-//  UnionField ::= SMFixedArray
-//  UnionField ::= SMInteger
-//  UnionField ::= SMString
-//  UnionField ::= SMStruct
-//  UnionField ::= SMVarArray
-//  UnionFields ::= ;
-//  UnionFields ::= SMRemainder ;
-//  UnionFields ::= UnionField ;
-//  UnionFields ::= UnionFields UnionField ;
-//  UnionFields ::= fail ;
-//  UnionFields ::= ignore ;
-//  UnionMember ::= UnionCase : UnionFields OptExtentSpec
-//  UnionMembers ::= UnionMember
-//  UnionMembers ::= UnionMembers UnionMember
 //
 //
 // Additional constraints:
