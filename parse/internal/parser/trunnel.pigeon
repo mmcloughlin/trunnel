@@ -407,11 +407,21 @@ HexLiteral <- "0x" [0-9a-fA-F]+
 
 OctalLiteral <- '0' [0-7]+
 
+// Comments
+
+SourceChar <- .
+Comment <- MultiLineComment / SingleLineComment
+MultiLineComment <- "/*" ( !"*/" SourceChar )* "*/"
+SingleLineComment <- "//" ( !EOL SourceChar )*
+
 // Character classes
 
-_ "optional whitespace" <- [ \t\n]*
-__ "whitespace" <- [ \t\n]+
+__ <- Skip+
+_ <- Skip*
 
+Skip <- (Whitespace / EOL / Comment)
+
+Whitespace <- [ \t\r]
 EOL <- '\n'
 EOF <- !.
 

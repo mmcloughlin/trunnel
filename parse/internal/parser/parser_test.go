@@ -663,6 +663,34 @@ func TestPragma(t *testing.T) {
 	}
 }
 
+func TestComments(t *testing.T) {
+	src := `struct /* comments can
+	be anywhere */ rgb {
+		u8 r; /* this is a multi
+	line comment that /*should exclude this:
+		u8 a;
+	(hopefully) */
+		u8 // end of line comment
+			g; //}
+		u8 b;
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "rgb",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "r"},
+					&ast.IntegerMember{Type: ast.U8, Name: "g"},
+					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestValidFiles(t *testing.T) {
 	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
 	require.NoError(t, err)

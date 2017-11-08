@@ -1846,51 +1846,171 @@ var g = &grammar{
 			},
 		},
 		{
-			name:        "_",
-			displayName: "\"optional whitespace\"",
-			pos:         position{line: 412, col: 1, offset: 9016},
-			expr: &zeroOrMoreExpr{
-				pos: position{line: 412, col: 28, offset: 9043},
-				expr: &charClassMatcher{
-					pos:        position{line: 412, col: 28, offset: 9043},
-					val:        "[ \\t\\n]",
-					chars:      []rune{' ', '\t', '\n'},
-					ignoreCase: false,
-					inverted:   false,
+			name: "SourceChar",
+			pos:  position{line: 412, col: 1, offset: 9007},
+			expr: &anyMatcher{
+				line: 412, col: 15, offset: 9021,
+			},
+		},
+		{
+			name: "Comment",
+			pos:  position{line: 413, col: 1, offset: 9023},
+			expr: &choiceExpr{
+				pos: position{line: 413, col: 12, offset: 9034},
+				alternatives: []interface{}{
+					&ruleRefExpr{
+						pos:  position{line: 413, col: 12, offset: 9034},
+						name: "MultiLineComment",
+					},
+					&ruleRefExpr{
+						pos:  position{line: 413, col: 31, offset: 9053},
+						name: "SingleLineComment",
+					},
 				},
 			},
 		},
 		{
-			name:        "__",
-			displayName: "\"whitespace\"",
-			pos:         position{line: 413, col: 1, offset: 9052},
-			expr: &oneOrMoreExpr{
-				pos: position{line: 413, col: 20, offset: 9071},
-				expr: &charClassMatcher{
-					pos:        position{line: 413, col: 20, offset: 9071},
-					val:        "[ \\t\\n]",
-					chars:      []rune{' ', '\t', '\n'},
-					ignoreCase: false,
-					inverted:   false,
+			name: "MultiLineComment",
+			pos:  position{line: 414, col: 1, offset: 9071},
+			expr: &seqExpr{
+				pos: position{line: 414, col: 21, offset: 9091},
+				exprs: []interface{}{
+					&litMatcher{
+						pos:        position{line: 414, col: 21, offset: 9091},
+						val:        "/*",
+						ignoreCase: false,
+					},
+					&zeroOrMoreExpr{
+						pos: position{line: 414, col: 26, offset: 9096},
+						expr: &seqExpr{
+							pos: position{line: 414, col: 28, offset: 9098},
+							exprs: []interface{}{
+								&notExpr{
+									pos: position{line: 414, col: 28, offset: 9098},
+									expr: &litMatcher{
+										pos:        position{line: 414, col: 29, offset: 9099},
+										val:        "*/",
+										ignoreCase: false,
+									},
+								},
+								&ruleRefExpr{
+									pos:  position{line: 414, col: 34, offset: 9104},
+									name: "SourceChar",
+								},
+							},
+						},
+					},
+					&litMatcher{
+						pos:        position{line: 414, col: 48, offset: 9118},
+						val:        "*/",
+						ignoreCase: false,
+					},
 				},
+			},
+		},
+		{
+			name: "SingleLineComment",
+			pos:  position{line: 415, col: 1, offset: 9123},
+			expr: &seqExpr{
+				pos: position{line: 415, col: 22, offset: 9144},
+				exprs: []interface{}{
+					&litMatcher{
+						pos:        position{line: 415, col: 22, offset: 9144},
+						val:        "//",
+						ignoreCase: false,
+					},
+					&zeroOrMoreExpr{
+						pos: position{line: 415, col: 27, offset: 9149},
+						expr: &seqExpr{
+							pos: position{line: 415, col: 29, offset: 9151},
+							exprs: []interface{}{
+								&notExpr{
+									pos: position{line: 415, col: 29, offset: 9151},
+									expr: &ruleRefExpr{
+										pos:  position{line: 415, col: 30, offset: 9152},
+										name: "EOL",
+									},
+								},
+								&ruleRefExpr{
+									pos:  position{line: 415, col: 34, offset: 9156},
+									name: "SourceChar",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "__",
+			pos:  position{line: 419, col: 1, offset: 9193},
+			expr: &oneOrMoreExpr{
+				pos: position{line: 419, col: 7, offset: 9199},
+				expr: &ruleRefExpr{
+					pos:  position{line: 419, col: 7, offset: 9199},
+					name: "Skip",
+				},
+			},
+		},
+		{
+			name: "_",
+			pos:  position{line: 420, col: 1, offset: 9205},
+			expr: &zeroOrMoreExpr{
+				pos: position{line: 420, col: 6, offset: 9210},
+				expr: &ruleRefExpr{
+					pos:  position{line: 420, col: 6, offset: 9210},
+					name: "Skip",
+				},
+			},
+		},
+		{
+			name: "Skip",
+			pos:  position{line: 422, col: 1, offset: 9217},
+			expr: &choiceExpr{
+				pos: position{line: 422, col: 10, offset: 9226},
+				alternatives: []interface{}{
+					&ruleRefExpr{
+						pos:  position{line: 422, col: 10, offset: 9226},
+						name: "Whitespace",
+					},
+					&ruleRefExpr{
+						pos:  position{line: 422, col: 23, offset: 9239},
+						name: "EOL",
+					},
+					&ruleRefExpr{
+						pos:  position{line: 422, col: 29, offset: 9245},
+						name: "Comment",
+					},
+				},
+			},
+		},
+		{
+			name: "Whitespace",
+			pos:  position{line: 424, col: 1, offset: 9255},
+			expr: &charClassMatcher{
+				pos:        position{line: 424, col: 15, offset: 9269},
+				val:        "[ \\t\\r]",
+				chars:      []rune{' ', '\t', '\r'},
+				ignoreCase: false,
+				inverted:   false,
 			},
 		},
 		{
 			name: "EOL",
-			pos:  position{line: 415, col: 1, offset: 9081},
+			pos:  position{line: 425, col: 1, offset: 9277},
 			expr: &litMatcher{
-				pos:        position{line: 415, col: 8, offset: 9088},
+				pos:        position{line: 425, col: 8, offset: 9284},
 				val:        "\n",
 				ignoreCase: false,
 			},
 		},
 		{
 			name: "EOF",
-			pos:  position{line: 416, col: 1, offset: 9093},
+			pos:  position{line: 426, col: 1, offset: 9289},
 			expr: &notExpr{
-				pos: position{line: 416, col: 8, offset: 9100},
+				pos: position{line: 426, col: 8, offset: 9296},
 				expr: &anyMatcher{
-					line: 416, col: 9, offset: 9101,
+					line: 426, col: 9, offset: 9297,
 				},
 			},
 		},
