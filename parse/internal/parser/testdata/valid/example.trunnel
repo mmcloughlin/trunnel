@@ -99,3 +99,14 @@ struct encrypted_record with context stream_settings {
 struct block with context stream_settings {
    u8 body[stream_settings.block_len];
 }
+
+struct s {
+  nulterm unsigned_header;
+  @ptr start_of_signed_material;
+  u32 bodylen;
+  u8 body[bodylen];
+  u64 flags;
+  @ptr end_of_signed_material;
+  u16 signature_len;
+  u8 signature[signature_len];
+}

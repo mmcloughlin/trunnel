@@ -54,6 +54,11 @@ type VarArrayMember struct {
 	Constraint LengthConstraint // nil means remainder
 }
 
+// Ptr signals a request to store a pointer to a location within a struct.
+type Ptr struct {
+	Name string
+}
+
 // EOS signals "end of struct".
 type EOS struct{}
 

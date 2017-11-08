@@ -781,6 +781,34 @@ func TestStructWithMultipleContexts(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestStructPtr(t *testing.T) {
+	src := `struct haspos {
+	  nulterm s1;
+	  /** Position right after the first NUL. */
+	  @ptr pos1;
+	  nulterm s2;
+	  @ptr pos2;
+	  u32 x;
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "haspos",
+				Members: []ast.Member{
+					&ast.NulTermString{Name: "s1"},
+					&ast.Ptr{Name: "pos1"},
+					&ast.NulTermString{Name: "s2"},
+					&ast.Ptr{Name: "pos2"},
+					&ast.IntegerMember{Type: ast.U32, Name: "x"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestValidFiles(t *testing.T) {
 	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
 	require.NoError(t, err)

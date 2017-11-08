@@ -141,11 +141,12 @@ ContextRefs <- "with" __ "context" __ ns:IdentifierList {
 
 //  StructMember ::= SMArray
 //  StructMember ::= SMInteger
+//  StructMember ::= SMPosition XXX
 //  StructMember ::= SMString
 //  StructMember ::= SMStruct
 //  StructMember ::= SMUnion XXX
 
-StructMember <- _ m:(SMArray / SMInteger / SMString / SMStruct / SMUnion) _ ';' {
+StructMember <- _ m:(SMArray / SMInteger / SMPosition / SMString / SMStruct / SMUnion) _ ';' {
   return m, nil
 }
 
@@ -228,6 +229,14 @@ SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? {
     m.Constraint = cst.(*ast.IntegerList)
   }
   return m, nil
+}
+
+// SMPosition ::= @ PtrKW ID
+
+SMPosition <- "@ptr" __ n:Identifier {
+  return &ast.Ptr{
+    Name: n.(string),
+  }, nil
 }
 
 //  SMString ::= nulterm ID
@@ -461,23 +470,3 @@ Whitespace <- [ \t\r]
 EOL <- '\n'
 EOF <- !.
 
-//
-//
-//
-//  IDList ::= ID
-//  IDList ::= IDList , ID
-//  LengthKW ::= ID
-//  OptAnnotation ::=
-//  OptAnnotation ::= ANNOTATION
-//  OptSemi ::=
-//  OptSemi ::= ;
-//
-//
-// Additional constraints:
-//
-//    Structure declarations form a DAG.
-//
-//    Field references in SMVarArray and SMUnion and SMUnionLength refer
-//    only to earlier-occurring fields in the same structure.
-//
-//    No ExtentSpec unless the union has a UnionLength.
