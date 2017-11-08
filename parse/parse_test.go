@@ -18,7 +18,7 @@ func TestEmpty(t *testing.T) {
 	}
 	for n, src := range empty {
 		t.Run(n, func(t *testing.T) {
-			f, err := ParseString(src)
+			f, err := String(src)
 			require.NoError(t, err)
 			assert.Equal(t, &ast.File{}, f)
 		})
@@ -39,7 +39,7 @@ func TestConstant(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			f, err := ParseString(c.Code)
+			f, err := String(c.Code)
 			require.NoError(t, err)
 			expect := &ast.File{
 				Constants: []*ast.Constant{
@@ -68,7 +68,7 @@ func TestStructBasic(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -80,7 +80,7 @@ func TestExtern(t *testing.T) {
 			&ast.ExternStruct{Name: "rgb"},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -95,7 +95,7 @@ func TestExternContexts(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -115,7 +115,7 @@ func TestIntTypes(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -185,7 +185,7 @@ func TestIntegerMember(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(s)
+	f, err := String(s)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -205,7 +205,7 @@ func TestNulTermString(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -244,7 +244,7 @@ func TestNestedStructs(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -279,7 +279,7 @@ func TestFixedArraySimple(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -318,7 +318,7 @@ func TestFixedArrayStructs(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -343,7 +343,7 @@ func TestVarLengthArray(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -368,7 +368,7 @@ func TestRemainderArray(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -391,7 +391,7 @@ func TestEOS(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -416,7 +416,7 @@ func TestVarLengthString(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -453,7 +453,7 @@ func TestLeftoverLengthArray(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -532,7 +532,7 @@ func TestUnion(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -600,7 +600,7 @@ func TestUnionExtentSpec(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -662,7 +662,7 @@ func TestUnionMembersAfter(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -689,7 +689,7 @@ func TestPragma(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			f, err := ParseString(c.Code)
+			f, err := String(c.Code)
 			require.NoError(t, err)
 			expect := &ast.File{
 				Pragmas: []*ast.Pragma{
@@ -724,7 +724,7 @@ func TestComments(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -744,7 +744,7 @@ func TestContext(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -765,9 +765,9 @@ func TestContextStructMemberErrors(t *testing.T) {
 	}
 	for n, m := range members {
 		t.Run(n, func(t *testing.T) {
-			_, err := ParseString("struct verify {" + m + "}")
+			_, err := String("struct verify {" + m + "}")
 			require.NoError(t, err)
-			_, err = ParseString("context ctx {" + m + "}")
+			_, err = String("context ctx {" + m + "}")
 			assert.Error(t, err)
 		})
 	}
@@ -795,7 +795,7 @@ func TestStructWithContext(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -815,7 +815,7 @@ func TestStructWithMultipleContexts(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }
@@ -843,7 +843,7 @@ func TestStructPtr(t *testing.T) {
 			},
 		},
 	}
-	f, err := ParseString(src)
+	f, err := String(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
 }

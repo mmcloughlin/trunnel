@@ -13,7 +13,7 @@ func GlobTest(t *testing.T, pattern string, valid bool) {
 	require.NoError(t, err)
 	for _, filename := range filenames {
 		t.Run(filename, func(t *testing.T) {
-			_, err := ParseFile(filename)
+			_, err := File(filename)
 			if valid {
 				assert.NoError(t, err)
 			} else {
