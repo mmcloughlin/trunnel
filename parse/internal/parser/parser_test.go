@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -825,28 +824,6 @@ func TestStructPtr(t *testing.T) {
 	f, err := ParseString(src)
 	require.NoError(t, err)
 	assert.Equal(t, expect, f)
-}
-
-func TestValidFiles(t *testing.T) {
-	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
-	require.NoError(t, err)
-	for _, filename := range filenames {
-		t.Run(filename, func(t *testing.T) {
-			_, err := ParseFile(filename)
-			assert.NoError(t, err)
-		})
-	}
-}
-
-func TestFailingFiles(t *testing.T) {
-	filenames, err := filepath.Glob("testdata/failing/*.trunnel")
-	require.NoError(t, err)
-	for _, filename := range filenames {
-		t.Run(filename, func(t *testing.T) {
-			_, err := ParseFile(filename)
-			assert.Error(t, err)
-		})
-	}
 }
 
 // TestOptions is primarily provided for test coverage of the generated Option
