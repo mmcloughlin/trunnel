@@ -1,0 +1,5 @@
+struct encrypted_record with context stream_settings {
+  u16 n_blocks;
+  // following problem seen in trunnel manual
+  struct block[n_blocks];
+}

@@ -1,0 +1,7 @@
+struct var_array_inside_union {
+   u8 a;
+   union u[a] {
+      0:  u16 n;
+          u8 b[n];
+   };
+}

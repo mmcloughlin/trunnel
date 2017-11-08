@@ -79,3 +79,23 @@ struct encrypted {
    };
    u64 data[4];
 }
+
+context stream_settings {
+   u8 block_mode;
+   u8 iv_len;
+   u8 block_len;
+   u8 mac_len;
+}
+
+struct encrypted_record with context stream_settings {
+   u8 iv[stream_settings.iv_len];
+   union msg[stream_settings.block_mode] {
+      0: u16 n_bytes; u8 bytes[n_bytes];
+  1: u16 n_blocks; struct block blocks[n_blocks];
+   };
+   u8 mac[stream_settings.maclen];
+}
+
+struct block with context stream_settings {
+   u8 body[stream_settings.block_len];
+}
