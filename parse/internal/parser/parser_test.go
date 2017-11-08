@@ -567,6 +567,68 @@ func TestUnionExtentSpec(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestUnionMembersAfter(t *testing.T) {
+	src := `struct encrypted {
+	   u8 type;
+	   union u[type] with length ..-32 {
+	      1: u8 bytes[];
+	  2: u8 salt[16];
+	     u8 other_bytes[];
+	   };
+	   u64 data[4];
+	}`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "encrypted",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "type"},
+					&ast.UnionMember{
+						Name:   "u",
+						Tag:    &ast.IDRef{Name: "type"},
+						Length: &ast.Leftover{Num: &ast.IntegerLiteral{Value: 32}},
+						Cases: []interface{}{
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(1)),
+								Fields: []ast.Member{
+									&ast.VarArrayMember{
+										Base:       ast.U8,
+										Name:       "bytes",
+										Constraint: nil,
+									},
+								},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(2)),
+								Fields: []ast.Member{
+									&ast.FixedArrayMember{
+										Base: ast.U8,
+										Name: "salt",
+										Size: &ast.IntegerLiteral{Value: 16},
+									},
+									&ast.VarArrayMember{
+										Base:       ast.U8,
+										Name:       "other_bytes",
+										Constraint: nil,
+									},
+								},
+							},
+						},
+					},
+					&ast.FixedArrayMember{
+						Base: ast.U64,
+						Name: "data",
+						Size: &ast.IntegerLiteral{Value: 4},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestPragma(t *testing.T) {
 	cases := []struct {
 		Name    string
