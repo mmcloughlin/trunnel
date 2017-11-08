@@ -14,6 +14,23 @@ func ParseString(s string, opts ...Option) (interface{}, error) {
 	return ParseReader("", strings.NewReader(s), opts...)
 }
 
+func TestEmpty(t *testing.T) {
+	empty := map[string]string{
+		"blank":  "",
+		"spaces": "    ",
+		"tab":    "\t",
+		"single_line_comment": "// nothing here",
+		"multi_line_comment":  "   /* or here*/\t",
+	}
+	for n, src := range empty {
+		t.Run(n, func(t *testing.T) {
+			f, err := ParseString(src)
+			require.NoError(t, err)
+			assert.Equal(t, &ast.File{}, f)
+		})
+	}
+}
+
 func TestConstant(t *testing.T) {
 	cases := []struct {
 		Name   string

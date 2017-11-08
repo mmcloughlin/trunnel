@@ -25,7 +25,7 @@ func (c *current) getLingeringDeclarations() []interface{} {
 //  Declarations ::= Declarations Declaration
 //  File ::= Declarations
 
-File <- ds:Declaration* EOF {
+File <- _ ds:Declaration* _ EOF {
   f := &ast.File{}
   lingering := c.getLingeringDeclarations()
   decls := append(ds.([]interface{}), lingering...)
