@@ -4,6 +4,7 @@ package ast
 // File represents a complete trunnel file.
 type File struct {
 	Constants []*Constant
+	Contexts  []*Context
 	Structs   []*Struct
 	Pragmas   []*Pragma
 }
@@ -12,6 +13,12 @@ type File struct {
 type Constant struct {
 	Name  string
 	Value int64
+}
+
+// Context is a context declaration.
+type Context struct {
+	Name    string
+	Members []*IntegerMember
 }
 
 // Struct is a struct declaration.

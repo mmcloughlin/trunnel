@@ -691,6 +691,49 @@ func TestComments(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestContext(t *testing.T) {
+	src := `context ctx { u8 a; u16 b; u32 c; u64 d; }`
+	expect := &ast.File{
+		Contexts: []*ast.Context{
+			{
+				Name: "ctx",
+				Members: []*ast.IntegerMember{
+					&ast.IntegerMember{Type: ast.U8, Name: "a"},
+					&ast.IntegerMember{Type: ast.U16, Name: "b"},
+					&ast.IntegerMember{Type: ast.U32, Name: "c"},
+					&ast.IntegerMember{Type: ast.U64, Name: "d"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+// TestContextStructMemberErrors confirms we get errors for member types that
+// are valid in structs but not in contexts.
+func TestContextStructMemberErrors(t *testing.T) {
+	members := map[string]string{
+		"fixed_array": "u8 fixed_array[2];",
+		"var_array":   "u16 len; u8 var_array[len];",
+		"eos":         "u8 a; eos;",
+		"remaining":   "u32 a; u8 rest[];",
+		"union": `u8 tag; union u[tag] {
+			1 : ignore;
+			default: fail;
+		};`,
+	}
+	for n, m := range members {
+		t.Run(n, func(t *testing.T) {
+			_, err := ParseString("struct verify {" + m + "}")
+			require.NoError(t, err)
+			_, err = ParseString("context ctx {" + m + "}")
+			assert.Error(t, err)
+		})
+	}
+}
+
 func TestValidFiles(t *testing.T) {
 	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
 	require.NoError(t, err)
