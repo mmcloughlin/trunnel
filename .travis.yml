@@ -8,6 +8,9 @@ install:
   - go get -t ./...
   - go get github.com/go-playground/overalls
   - go get github.com/mattn/goveralls
+  - go get github.com/alecthomas/gometalinter
+  - gometalinter --install
 script:
+  - gometalinter --config=.gometalinter.json ./...
   - overalls -project=github.com/mmcloughlin/trunnel -- -v -coverpkg=./...
   - goveralls -coverprofile=overalls.coverprofile -service=travis-ci

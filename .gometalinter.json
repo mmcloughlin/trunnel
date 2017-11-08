@@ -1,0 +1,7 @@
+{
+  "EnableAll": true,
+  "Skip": [
+    "parse/internal/parser"
+  ],
+  "LineLength": 120
+}
