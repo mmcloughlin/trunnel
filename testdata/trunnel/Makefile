@@ -16,6 +16,8 @@ import: manifest.txt
 	xargs -i cp -v {} . < $<
 
 manifest.txt: FORCE
-	find ${REF}/examples ${REF}/test/valid -name '*.trunnel' > $@
+	# excluding tor.trunnel because it contains examples of unions without
+	# trailing semi-colons
+	find ${REF}/examples ${REF}/test/valid -name '*.trunnel' | grep -v 'tor\.trunnel' > $@
 
 .PHONY: FORCE
