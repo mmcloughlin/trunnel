@@ -723,6 +723,7 @@ func TestContextStructMemberErrors(t *testing.T) {
 			1 : ignore;
 			default: fail;
 		};`,
+		"int_constraint": "u8 x IN [ 42 ];",
 	}
 	for n, m := range members {
 		t.Run(n, func(t *testing.T) {
