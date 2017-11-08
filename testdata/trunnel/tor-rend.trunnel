@@ -1,0 +1,77 @@
+
+
+struct establish_intro_body {
+    u16 key_len;
+    u8 key[key_len];
+    u8 session_hash[20];
+    u8 sig[];
+}
+
+struct introduce1_cell {
+    u8 pk_id;
+    u8 encrypted_part[];
+}
+
+struct introduce1_cell_plaintext {
+    u8 byte0;
+    union un[byte0] {
+        default: struct v0_intro_body v0;
+        1: struct v1_intro_body v1;
+        2: struct v2_intro_body v2;
+        3: struct v3_intro_body v3;
+        4..32: fail;
+    };
+}
+
+struct v0_intro_body {
+   u8 rest_of_nickname[19];
+   u8 rc[20];
+   u8 dh_data[128];
+}
+
+struct v1_intro_body {
+   u8 rp_id[42];
+   u8 rc[20];
+   u8 dh_data[128];
+}
+
+struct v2_intro_body {
+   u32 rp_ip;
+   u16 rp_port;
+   u8 rp_id[20];
+   u16 klen;
+   u8 onion_key[klen];
+   u8 rc[20];
+   u8 dh_data[128];
+}
+
+struct v3_intro_body {
+   u8 auth_type;
+   union auth[auth_type] {
+     0 : ;
+     default : u16 auth_len;
+               u8 auth_data[auth_len];
+   };
+   u32 timestamp;
+   u32 rp_ip;
+   u16 rp_port;
+   u8 rp_id[20];
+   u16 klen;
+   u8 onion_key[klen];
+   u8 rc[20];
+   u8 dh_data[128];
+}
+
+struct rendezvous1_cell_body {
+   u8 rc[20];
+   u8 dh[128];
+   u8 kh[20];
+}
+
+struct rendezvous2_cell_body {
+   u8 dh[128];
+   u8 kh[20];
+}
+
+
+

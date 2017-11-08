@@ -1,0 +1,47 @@
+
+const TWO = 2;
+const THREE = 3;
+/** The number four. */
+const FOUR = 4;
+const FIVE = 5;
+
+
+struct restricted {
+   /** A restricted number */
+   u32 i1 IN [ 1 ];
+   u32 i2 IN [ 1..2, 5, 10 ];
+   u32 i3 IN [ 1..THREE ];
+}
+
+/** Some numbers */
+struct numbers {
+   /** A number */
+   u8 i8;
+   u16 i16;
+   u32 i32 IN [0..0xbadbeee, 0xbadbef0..0xffffffff];
+   u64 i64;
+}
+
+struct uses_eos {
+  u16 a;
+  u16 b;
+  eos;
+}
+
+struct extends {
+   nulterm a;
+   /** The rest of this thing. */
+   u8 remainder[];
+}
+
+struct extends2 {
+   nulterm a;
+   /** The rest of this thing. */
+   char remainder[];
+}
+
+struct extends3 {
+   nulterm a;
+   /** The rest of this thing. */
+   u32 remainder[];
+}

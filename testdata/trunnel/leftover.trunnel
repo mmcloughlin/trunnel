@@ -1,0 +1,26 @@
+
+
+const EIGHT = 8;
+
+struct message {
+   u8 message[..-4];
+   nulterm stuff;
+}
+
+struct message16 {
+   u16 message[..-EIGHT];
+   u8 stuff[EIGHT];
+}
+
+/* unlo "union with leftovers" */
+struct unlo {
+   u8 tag;
+   union u[tag] with length ..-8 {
+     1: u8 x;
+     2: u8 y[];
+     //     3: u8 w[..-1]; u8 ww;
+     4: u8 byte; u16 z[];
+   };
+   u8 leftoverlen;
+   u8 leftovers[leftoverlen];
+}

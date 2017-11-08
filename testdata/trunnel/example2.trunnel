@@ -1,0 +1,141 @@
+
+// Here's a structure full of non-compound objects.
+struct simple_struct {
+   nulterm string; // A nul-terminated string
+   u8 a;           // A one-byte number
+   u16 b;          // A two-byte number
+   u32 c;          // A four-byte number
+   u64 d;          // An eight-byte number
+}
+
+/** You can put constraints on integers.
+ *
+ *  You can also put in doxygen comments before structures and fields to make
+ *  them documented. */
+struct date {
+   /** You can use a range for a constraint */
+   u16 year IN [ 1970..65535 ];
+   /** You can use a list too */
+   u8 month IN [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ];
+   /** You can combine lists and ranges, even though this is a little silly:
+    * we could write this as 1..31 instead. */
+   u8 day IN [ 1,2,3..31 ];
+}
+
+// We can nest structures in structures
+struct color { u8 r; u8 g; u8 b; }
+struct gradiant {
+   struct color c1;
+   struct color c2;
+}
+
+// This structure demonstrates fixed-width arrays.
+struct fixie_demo {
+   u8 byte[8];
+   char letters[8];
+   u16 shortwords[4];
+   u32 words[2];
+   u64 big_words[2];
+
+   struct color colors[2];
+}
+
+// You can have the length of an array depend on a variable.
+struct var_array_demo {
+   u8 n_colors;
+   struct color colors[n_colors];
+
+   u8 n_bytes;
+   u8 bytes[n_bytes];
+
+   u8 n_letters;
+   char letters[n_letters];
+
+   u8 n_shorts;
+   u16 shorts[n_shorts];
+
+   u8 n_words;
+   u32 words[n_words];
+
+   u32 n_bigwords;
+   u64 bigwords[n_bigwords];
+}
+
+// contants are fun
+const T_COLOR = 1;
+const T_DATE = 2;
+const T_INTEGER = 3;
+const T_INTARRAY = 4;
+const T_VARARRAY = 5;
+const T_STRING = 6;
+
+// We support tagged unions.  They can appear within a structure; not
+// at toplevel.
+struct simple_union_demo {
+   u8 tag IN [ T_COLOR, T_DATE, T_INTEGER, T_INTARRAY, T_VARARRAY, T_STRING ];
+   union value[tag] {
+    T_COLOR : struct color c;
+    T_DATE : struct date d;
+    T_INTEGER : u32 num;
+    T_INTARRAY : u8 eightbytes[8];
+    T_STRING : nulterm string;
+    // By default, this will fail.  So T_VARARRAY in invalid here.
+    // You could make it fail explicitly by saying "default: fail;".
+   };
+}
+
+// Here are some union things we didn't do above.
+struct union2 {
+   u8 tag;
+
+   u8 len; // only variable arrays below look at this.
+
+   union u[tag] {
+     0..1: u8 i8;
+     2: u16 i16;
+     3: u32 i32;
+     4: u64 i64;
+     5: u8 a8[3];
+     6: u16 a16[3];
+     7: u32 a32[3];
+     8: u64 a64[3];
+     9: struct color c;
+     10,11,12: struct color ca[2];
+
+     14: u8 v8[len];
+     15: u16 v16[len];
+     16: u32 v32[len];
+     17: u64 v64[len];
+     18: struct color va2[len];
+     20: char str2[len];
+     21: char str[8];
+
+
+   };
+
+}
+
+
+struct union_with_len {
+  u16 tag;
+  u16 unionlen;
+
+  union u[tag] with length unionlen {
+    1: struct color c;
+    2: struct date d;
+       ...; // ... means it's okay if unionlen > sizeof(date)
+    default: u8 unparseable[];
+    // We could also say "default: ignore;" to not retain the data.
+  };
+
+  u16 right_after_the_union;
+}
+
+
+struct with_remainder {
+
+   u8 len;
+   u8 bytes[len];
+   /** This one holds any bytes left over at the end of the input. */
+   u8 remainder[];
+}

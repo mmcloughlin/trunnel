@@ -1,0 +1,84 @@
+const X = 20;
+
+struct name2 { u8 foo; }
+struct name3 { u8 foo; }
+struct name4 { u8 foo; }
+struct xx { u8 foo; }
+struct yy { u8 foo; struct xx zz; }
+struct zz { struct yy zz; }
+
+const TYPE1 = 1;
+const TYPE2 = 2;
+const TYPE3 = 3;
+
+struct name {
+   u8 thing1 IN [0..20];
+   u16 thing2;
+
+
+   u8 thing_x IN [TYPE1, TYPE2, TYPE3];
+
+   u8 thing3[20];
+   u32 thing4[X];
+
+   struct name2 thing5;
+
+   struct name2 thing6[2];
+
+   nulterm thing7;
+
+   u8 count;
+   struct name2 counted[count];
+
+   u8 count2;
+   char string[count2];
+   char buf[10];
+
+   u16 short_list1[20];
+   u16 short_list2[count2];
+
+   u8 tag_field;
+   union union_field[tag_field] {
+      3 : struct name3 v1;
+      4 : struct name4 v2;
+      X : u32 number;
+      5 : u8 stuff[10];
+      6 : nulterm a_string;
+      default : fail;
+   };
+
+   eos;
+}
+
+
+struct namex {
+    u8 tag;
+    u8 length;
+
+    union fred[tag] with length length {
+        4: struct xx field1;
+        5: struct yy field2;
+        default: ignore;
+    };
+
+    union alice[tag] with length length {
+        5: struct yy field3 ; ... ;
+        default: u8 junk[];
+    };
+
+}
+
+struct catch_more_cases {
+   u64 bar;
+   u64 baz[10];
+   u8 len;
+   u64 quux[len];
+   u32 tag;
+   union bob[tag] {
+     1: u8 x;
+     2: u16 y;
+     3..10: u32 z;
+     11: u64 foo;
+   };
+}
+

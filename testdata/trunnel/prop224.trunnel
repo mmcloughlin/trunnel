@@ -1,0 +1,108 @@
+// approximate implementation of cell formats from Tor proposal 224.
+
+// From tor-spec.txt as amended by prop220
+extern struct link_specifier;
+
+struct establish_intro_cell_extension {
+   u8 type;
+   u8 len;
+   union un[type] with length len {
+     default: u8 unrecognized[];
+   };
+}
+
+struct establish_intro_cell {
+  u8 auth_key_type IN [2..254];
+  u8 auth_key_len;
+  u8 auth_key[auth_key_len];
+  u8 n_extensions;
+  struct establish_intro_cell_extension exts[n_extensions];
+  u8 handshake_auth[32];
+  u8 siglen;
+  u8 signature[siglen];
+}
+
+struct old_establish_intro_cell {
+  u16 key_length IN [ 0..511 ] ;
+  u8 key[key_length];
+  u8 handshake_auth[20];
+  u8 sig[];
+}
+
+struct maint_establish_intro_cell {
+  u8 prefix IN [0xFF];
+  struct maint_cell_command cmds[];
+}
+
+const UPDATE_KEYS = 0x0001;
+
+struct maint_cell_command {
+  u16 type;
+  u16 len;
+  union un[type] with length len {
+    UPDATE_KEYS: struct update_keys_command update_cmd;
+    default: u8 unrecognized[];
+  };
+}
+
+struct update_keys_command {
+   u8 numkeys;
+   struct key_update update[numkeys];
+   u32 counter;
+   u8 siglen;
+   u8 signature[siglen];
+}
+
+struct key_update {
+   u8 keytype;
+   u8 keylen;
+   union key[keytype] with length keylen {
+     1: u8 curve25519_key[32];
+     default: u8 unrecognized[];
+   };
+}
+
+struct introduce1_cell {
+  u8 auth_keyid[32];
+  u8 enc_keyid[8];
+  u8 n_extensions;
+  struct intro_cell_extension exts[n_extensions];
+  u8 encrypted[];
+}
+
+struct intro_cell_extension {
+  u8 type;
+  u8 len;
+  union un[type] with length len {
+    default: u8 unrecognized[];
+  };
+}
+
+struct introduce_ack_cell {
+  u16 status;
+  // not counted originally
+  u8 n_extensions;
+  struct intro_ack_cell_extension exts[n_extensions];
+}
+struct intro_ack_cell_extension {
+  u8 type;
+  u8 len;
+  union un[type] with length len {
+    default: u8 unrecognized[];
+  };
+}
+
+struct encrypted_intro_cell {
+  u8 rend_cookie[20];
+  u8 n_exts;
+  struct intro_cell_extension exts[n_exts];
+  u8 onion_key_type;
+  union onion_key[onion_key_type] {
+    1: u8 tap_key[128];
+    2: u8 ntor_key[32];
+    default: fail;
+  };
+  u8 nspec;
+  struct link_specifier lspecs[nspec];
+  u8 pad[];
+}

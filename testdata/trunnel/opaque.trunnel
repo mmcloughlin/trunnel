@@ -1,0 +1,10 @@
+
+trunnel options very_opaque;
+
+extern struct numbers;
+
+struct extends4 {
+   nulterm a;
+   /** The rest of this thing. */
+   struct numbers remainder[];
+}

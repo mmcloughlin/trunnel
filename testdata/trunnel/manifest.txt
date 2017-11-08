@@ -1,0 +1,13 @@
+../../ref/trunnel/examples/example.trunnel
+../../ref/trunnel/examples/example2.trunnel
+../../ref/trunnel/examples/prop220.trunnel
+../../ref/trunnel/examples/prop224.trunnel
+../../ref/trunnel/examples/socks5.trunnel
+../../ref/trunnel/examples/tor-rend.trunnel
+../../ref/trunnel/examples/tor.trunnel
+../../ref/trunnel/test/valid/contexts.trunnel
+../../ref/trunnel/test/valid/derived.trunnel
+../../ref/trunnel/test/valid/leftover.trunnel
+../../ref/trunnel/test/valid/opaque.trunnel
+../../ref/trunnel/test/valid/positions.trunnel
+../../ref/trunnel/test/valid/simple.trunnel

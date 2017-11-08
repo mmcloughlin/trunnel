@@ -1,0 +1,112 @@
+
+const TWO = 2;
+const THREE = 3;
+/** The number four. */
+const FOUR = 4;
+const FIVE = 5;
+
+extern struct restricted;
+extern struct numbers;
+
+trunnel options opaque;
+
+struct nested {
+   /** A structure in a structure */
+   struct numbers num1;
+   struct numbers num2;
+   struct strings {
+      /** A fixed array of char */
+      char f[10];
+      /** A nul-terminated string */
+      nulterm nt;
+   } strs;
+   struct restricted res;
+};
+
+/** A structure full of fixed-lenth arrays. */
+struct fixed {
+   /** A fixed array */
+   u8  a8[4];
+   u16 a16[6];
+   u32 a32[THREE];
+   u64 a64[1];
+
+   struct numbers nums[TWO];
+}
+
+struct varlen {
+   u8 len1;
+   u16 len2;
+   u32 len3;
+   u64 len4;
+
+   /** A variable-length string */
+   char str[len1];
+
+   /** A variable-length array */
+   u8 a8[len1];
+   u16 a16[len2];
+   u32 a32[len3];
+   u64 a64[len4];
+
+   struct numbers nums[len2];
+}
+
+struct union1 {
+   u8 tag;
+   /** A union. */
+   union un[tag] {
+     TWO: u8 a;
+     3 .. 4: u16 b;
+             u64 b2;
+     FIVE: u8 c[16];
+     6: nulterm d;
+     7: struct numbers e;
+     8: ;
+     9 : u8 x;
+         u8 xs[x];
+   };
+
+}
+
+struct union2 {
+   u8 tag;
+   u16 length;
+   /** A union with a length */
+   union un[tag] with length length {
+     TWO: u8 a;
+     THREE: u16 b;
+            ...;
+     FOUR, 0x05:
+           // A comment to get ignored.
+           u8 c[16];
+	   /*
+	      Another comment to ignore.
+	    */
+           u8 remainder[];
+     8 : ;
+     9 : u8 x;
+         u8 xs[x];
+     default: fail;
+   };
+
+   nulterm more;
+}
+
+struct union3 {
+   u16 tag;
+   u16 length;
+   union un[tag] with length length {
+     TWO: u8 a;
+     default: u8 stuff[];
+   };
+}
+
+struct union4 {
+   u16 tag;
+   u16 length;
+   union un[tag] with length length {
+     TWO: u8 a;
+     default: ignore;
+   };
+}
