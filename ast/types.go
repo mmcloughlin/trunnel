@@ -39,6 +39,7 @@ type IntegerMember struct {
 	Constraint *IntegerList
 }
 
+// ArrayBase is a type that can be stored in an array.
 type ArrayBase interface{}
 
 // FixedArrayMember is a fixed-length array struct member.
@@ -74,6 +75,7 @@ type StructMember struct {
 	Name string
 }
 
+// UnionMember is a union member of a struct.
 type UnionMember struct {
 	Name   string
 	Tag    *IDRef
@@ -81,13 +83,16 @@ type UnionMember struct {
 	Cases  interface{}
 }
 
+// UnionCase is a case in a union.
 type UnionCase struct {
 	Case   *IntegerList // nil is the default case
 	Fields interface{}
 }
 
+// Fail directive for a union case.
 type Fail struct{}
 
+// Ignore directive in a union case.
 type Ignore struct{}
 
 // CharType represents the character type.
@@ -143,6 +148,7 @@ type IntegerRange struct {
 	High Integer
 }
 
+// NewIntegerRange constructs an IntegerRange from lo to hi.
 func NewIntegerRange(lo, hi Integer) *IntegerRange {
 	return &IntegerRange{
 		Low:  lo,
@@ -150,6 +156,7 @@ func NewIntegerRange(lo, hi Integer) *IntegerRange {
 	}
 }
 
+// NewIntegerRangeLiteral constructs an IntegerRange with literal bounds.
 func NewIntegerRangeLiteral(lo, hi int64) *IntegerRange {
 	return NewIntegerRange(
 		&IntegerLiteral{Value: lo},
@@ -157,10 +164,13 @@ func NewIntegerRangeLiteral(lo, hi int64) *IntegerRange {
 	)
 }
 
+// NewIntegerRangeSingle constructs an IntegerRange containing just one integer.
 func NewIntegerRangeSingle(i Integer) *IntegerRange {
 	return NewIntegerRange(i, nil)
 }
 
+// NewIntegerRangeSingleLiteral constructs an IntegerRange containing a single
+// integer specified with a literal.
 func NewIntegerRangeSingleLiteral(v int64) *IntegerRange {
 	return NewIntegerRangeSingle(&IntegerLiteral{Value: v})
 }
@@ -170,18 +180,23 @@ type IntegerList struct {
 	Ranges []*IntegerRange
 }
 
+// NewIntegerList constructs an integer list from the given ranges.
 func NewIntegerList(ranges ...*IntegerRange) *IntegerList {
 	return &IntegerList{
 		Ranges: ranges,
 	}
 }
 
+// LengthConstraint specifies a constraint on the length of a struct member.
 type LengthConstraint interface{}
 
+// Leftover is a LengthConstraint which specifies the member occupies all but
+// the last Num bytes.
 type Leftover struct {
 	Num Integer
 }
 
+// IDRef is a reference to an identifier, possibly within a scope.
 type IDRef struct {
 	Scope string
 	Name  string
