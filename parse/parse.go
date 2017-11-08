@@ -8,6 +8,8 @@ import (
 	"github.com/mmcloughlin/trunnel/parse/internal/parser"
 )
 
+//go:generate pigeon -o internal/parser/gen-parser.go trunnel.pigeon
+
 func ParseFile(filename string) (*ast.File, error) {
 	return cast(parser.ParseFile(filename))
 }
