@@ -230,7 +230,7 @@ UnionLength <- "with" __ "length" __ l:LengthConstraint {
 
 //  UnionMember ::= UnionCase : UnionFields OptExtentSpec XXX extent spec
 
-UnionMember <- _ cse:UnionCase _ ':' _ fs:UnionFields _ {
+UnionMember <- _ cse:UnionCase _ ':' _ fs:UnionBody _ {
   uc := &ast.UnionCase{
     Fields: fs,
   }
@@ -256,18 +256,25 @@ UnionCase <- l:IntList {
 //  UnionFields ::= fail ; XXX
 //  UnionFields ::= ignore ; XXX
 
-UnionFields <- _ ';' {
+UnionBody <- _ ';' {
   return nil, nil
-} / ms:UnionField+ {
-  fs := []ast.Member{}
-  for _, i := range ms.([]interface{}) {
-    fs = append(fs, i.(ast.Member))
-  }
-  return fs, nil
 } / "fail" _ ';' {
   return &ast.Fail{}, nil
 } / "ignore" _ ';' {
   return &ast.Ignore{}, nil
+} / fs:UnionFields {
+  return fs, nil
+}
+
+UnionFields <- ms:UnionField* _ e:ExtentSpec? {
+  fs := []ast.Member{}
+  for _, i := range ms.([]interface{}) {
+    fs = append(fs, i.(ast.Member))
+  }
+  if e != nil {
+    fs = append(fs, e)
+  }
+  return fs, nil
 }
 
 //  UnionField ::= SMFixedArray
@@ -278,6 +285,16 @@ UnionFields <- _ ';' {
 
 UnionField <- _ m:(SMFixedArray / SMInteger / SMString / SMStruct / SMVarArray) _ ';' {
   return m, nil
+}
+
+//  OptExtentSpec ::=
+//  OptExtentSpec ::= ... ;
+//  OptExtentSpec ::= SMRemainder ;
+
+ExtentSpec <- "..." _ ';' {
+  return &ast.Ignore{}, nil
+} / r:SMRemainder _ ';' {
+  return r, nil
 }
 
 StructRef <- s:StructDecl {
@@ -410,9 +427,6 @@ EOF <- !.
 //  LengthKW ::= ID
 //  OptAnnotation ::=
 //  OptAnnotation ::= ANNOTATION
-//  OptExtentSpec ::=
-//  OptExtentSpec ::= ... ;
-//  OptExtentSpec ::= SMRemainder ;
 //  OptSemi ::=
 //  OptSemi ::= ;
 //

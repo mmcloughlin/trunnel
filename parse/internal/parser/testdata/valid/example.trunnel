@@ -47,3 +47,9 @@ struct has_union {
 		default : fail;
 	};
 }
+
+struct fourbytes {
+   u16 x;
+   u16 y;
+   eos;
+}

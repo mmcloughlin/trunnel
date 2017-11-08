@@ -499,6 +499,74 @@ func TestUnion(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestUnionExtentSpec(t *testing.T) {
+	src := `struct union_extent {
+		u8 tag;
+		u16 length;
+		union addr[tag] with length length {
+		   7 : ignore;
+		   0xEE : u32 ipv4_addr;
+		          ...;
+		   0xEF : u32 ipv4_addr;
+		          u8 remainder[];
+		   default: u8 unrecognized[];
+		};
+	};`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name: "union_extent",
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "tag"},
+					&ast.IntegerMember{Type: ast.U16, Name: "length"},
+					&ast.UnionMember{
+						Name:   "addr",
+						Tag:    &ast.IDRef{Name: "tag"},
+						Length: &ast.IDRef{Name: "length"},
+						Cases: []interface{}{
+							&ast.UnionCase{
+								Case:   ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(7)),
+								Fields: &ast.Ignore{},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xee)),
+								Fields: []ast.Member{
+									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
+									&ast.Ignore{},
+								},
+							},
+							&ast.UnionCase{
+								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xef)),
+								Fields: []ast.Member{
+									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
+									&ast.VarArrayMember{
+										Base:       ast.U8,
+										Name:       "remainder",
+										Constraint: nil,
+									},
+								},
+							},
+							&ast.UnionCase{
+								Case: nil,
+								Fields: []ast.Member{
+									&ast.VarArrayMember{
+										Base:       ast.U8,
+										Name:       "unrecognized",
+										Constraint: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestPragma(t *testing.T) {
 	cases := []struct {
 		Name    string

@@ -1,0 +1,7 @@
+struct double_semi {
+    u8 tag;
+    u16 length;
+    union addr[tag] with length length {
+       4 : u32 ipv4_addr; ;
+    };
+}
