@@ -78,6 +78,33 @@ func TestStructBasic(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
+func TestExtern(t *testing.T) {
+	src := "extern struct rgb;"
+	expect := &ast.File{
+		Extern: []*ast.ExternStruct{
+			&ast.ExternStruct{Name: "rgb"},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestExternContexts(t *testing.T) {
+	src := "extern struct rgb with context a,b,c;"
+	expect := &ast.File{
+		Extern: []*ast.ExternStruct{
+			&ast.ExternStruct{
+				Name:     "rgb",
+				Contexts: []string{"a", "b", "c"},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestIntTypes(t *testing.T) {
 	src := `struct s { u8 a; u16 b; u32 c; u64 d; }`
 	expect := &ast.File{

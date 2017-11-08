@@ -6,6 +6,7 @@ type File struct {
 	Constants []*Constant
 	Contexts  []*Context
 	Structs   []*Struct
+	Extern    []*ExternStruct
 	Pragmas   []*Pragma
 }
 
@@ -108,6 +109,13 @@ var (
 // StructRef represents a reference to a struct type.
 type StructRef struct {
 	Name string
+}
+
+// ExternStruct is a declaration that a Trunnel structure is available
+// elsewhere.
+type ExternStruct struct {
+	Name     string
+	Contexts []string
 }
 
 // Pragma represents a directive to trunnel.

@@ -37,6 +37,8 @@ File <- _ ds:Declaration* _ EOF {
         f.Contexts = append(f.Contexts, d)
       case *ast.Struct:
         f.Structs = append(f.Structs, d)
+      case *ast.ExternStruct:
+        f.Extern = append(f.Extern, d)
       case *ast.Pragma:
         f.Pragmas = append(f.Pragmas, d)
       default:
@@ -52,7 +54,7 @@ File <- _ ds:Declaration* _ EOF {
 //  Declaration ::= extern struct ID OptWithContext ; XXX
 //  Declaration ::= trunnel ID IDList ;
 
-Declaration <- _ d:(ConstDeclaration / ContextDeclaration / StructDeclaration / PragmaDeclaration) _ {
+Declaration <- _ d:(ConstDeclaration / ContextDeclaration / StructDeclaration / ExternDeclaration / PragmaDeclaration) _ {
   return d, nil
 }
 
@@ -120,6 +122,16 @@ StructDecl <- n:StructIdentifier ctx:(__ ContextRefs)? _ '{' ms:StructMember* _ 
 
 StructIdentifier <- "struct" __ n:Identifier {
   return n, nil
+}
+
+ExternDeclaration <- "extern" __ n:StructIdentifier ctx:(__ ContextRefs)?_ ';' {
+  e := &ast.ExternStruct{
+    Name: n.(string),
+  }
+  if ctx != nil {
+    e.Contexts = ctx.([]interface{})[1].([]string)
+  }
+  return e, nil
 }
 
 PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
