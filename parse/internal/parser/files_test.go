@@ -30,3 +30,7 @@ func TestValidFiles(t *testing.T) {
 func TestFailingFiles(t *testing.T) {
 	GlobTest(t, "testdata/failing/*.trunnel", false)
 }
+
+func TestTorFiles(t *testing.T) {
+	GlobTest(t, "../../../testdata/tor/*.trunnel", true)
+}
