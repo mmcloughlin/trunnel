@@ -1,0 +1,6 @@
+struct rem_not_last {
+    u8 tag;
+    union addr[tag] {
+       4 : u8 a; u8 b; eos;
+    };
+}
