@@ -734,6 +734,53 @@ func TestContextStructMemberErrors(t *testing.T) {
 	}
 }
 
+func TestStructWithContext(t *testing.T) {
+	src := `struct encrypted_record with context stream_settings {
+		u8 iv[stream_settings.iv_len];
+	};`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name:     "encrypted_record",
+				Contexts: []string{"stream_settings"},
+				Members: []ast.Member{
+					&ast.VarArrayMember{
+						Base: ast.U8,
+						Name: "iv",
+						Constraint: &ast.IDRef{
+							Scope: "stream_settings",
+							Name:  "iv_len",
+						},
+					},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
+func TestStructWithMultipleContexts(t *testing.T) {
+	src := `struct multi with context ctx0,ctx1 , ctx2,      ctx3 {
+		u8 x;
+	};`
+	expect := &ast.File{
+		Structs: []*ast.Struct{
+			{
+				Name:     "multi",
+				Contexts: []string{"ctx0", "ctx1", "ctx2", "ctx3"},
+				Members: []ast.Member{
+					&ast.IntegerMember{Type: ast.U8, Name: "x"},
+				},
+			},
+		},
+	}
+	f, err := ParseString(src)
+	require.NoError(t, err)
+	assert.Equal(t, expect, f)
+}
+
 func TestValidFiles(t *testing.T) {
 	filenames, err := filepath.Glob("testdata/valid/*.trunnel")
 	require.NoError(t, err)

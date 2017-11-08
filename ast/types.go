@@ -23,8 +23,9 @@ type Context struct {
 
 // Struct is a struct declaration.
 type Struct struct {
-	Name    string
-	Members []Member
+	Name     string
+	Contexts []string
+	Members  []Member
 }
 
 // Member is a field in a struct definition.

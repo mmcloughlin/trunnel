@@ -95,9 +95,9 @@ StructDeclaration <- s:StructDecl _ ';'? {
   return s, nil
 }
 
-//  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding }
+//  StructDecl ::= struct ID OptWithContext { StructMembers StructEnding } XXX context ref
 
-StructDecl <- n:StructIdentifier __ '{' ms:StructMember* _ e:StructEnding? _ '}' {
+StructDecl <- n:StructIdentifier ctx:(__ ContextRefs)? _ '{' ms:StructMember* _ e:StructEnding? _ '}' {
   m := make([]ast.Member, 0)
   for _, i := range ms.([]interface{}) {
     m = append(m, i.(ast.Member))
@@ -105,10 +105,17 @@ StructDecl <- n:StructIdentifier __ '{' ms:StructMember* _ e:StructEnding? _ '}'
   if e != nil {
     m = append(m, e.(ast.Member))
   }
-  return &ast.Struct{
+
+  s := &ast.Struct{
     Name: n.(string),
     Members: m,
-  }, nil
+  }
+
+  if ctx != nil {
+    s.Contexts = ctx.([]interface{})[1].([]string)
+  }
+
+  return s, nil
 }
 
 StructIdentifier <- "struct" __ n:Identifier {
@@ -124,6 +131,10 @@ PragmaDeclaration <- "trunnel" __ n:Identifier __ opts:IdentifierList _ ';' {
 
 //  OptWithContext ::=
 //  OptWithContext ::= with context IDList XXX
+
+ContextRefs <- "with" __ "context" __ ns:IdentifierList {
+  return ns, nil
+}
 
 //  StructMembers ::=
 //  StructMembers ::= StructMembers OptAnnotation StructMember ; XXX
@@ -308,7 +319,7 @@ UnionFields <- ms:UnionField* _ e:ExtentSpec? {
 //  UnionField ::= SMStruct
 //  UnionField ::= SMVarArray
 
-UnionField <- _ m:(SMFixedArray / SMInteger / SMString / SMStruct / SMVarArray) _ ';' {
+UnionField <- _ m:(SMArray / SMInteger / SMString / SMStruct) _ ';' {
   return m, nil
 }
 
@@ -426,7 +437,7 @@ IntLiteral <- (HexLiteral / OctalLiteral / DecimalLiteral) {
   return strconv.ParseInt(string(c.text), 0, 64)
 }
 
-DecimalLiteral <- [0-9]+ [0-9]*
+DecimalLiteral <- [0-9]+
 
 HexLiteral <- "0x" [0-9a-fA-F]+
 
