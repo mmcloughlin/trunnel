@@ -1,0 +1,6 @@
+[submodule "ref/tor"]
+	path = ref/tor
+	url = https://git.torproject.org/tor.git
+[submodule "ref/trunnel"]
+	path = ref/trunnel
+	url = https://git.torproject.org/trunnel.git
