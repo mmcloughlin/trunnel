@@ -85,8 +85,8 @@ type UnionMember struct {
 
 // UnionCase is a case in a union.
 type UnionCase struct {
-	Case   *IntegerList // nil is the default case
-	Fields interface{}
+	Case    *IntegerList // nil is the default case
+	Members []Member
 }
 
 // Fail directive for a union case.

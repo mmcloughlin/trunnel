@@ -483,7 +483,7 @@ func TestUnion(t *testing.T) {
 						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(4)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
 								},
 							},
@@ -492,7 +492,7 @@ func TestUnion(t *testing.T) {
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(6)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.FixedArrayMember{
 										Base: ast.U8,
 										Name: "ipv6_addr",
@@ -505,7 +505,7 @@ func TestUnion(t *testing.T) {
 									ast.NewIntegerRangeSingleLiteral(0xf0),
 									ast.NewIntegerRangeSingleLiteral(0xf1),
 								),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.IntegerMember{Type: ast.U8, Name: "hostname_len"},
 									&ast.VarArrayMember{
 										Base:       &ast.CharType{},
@@ -518,13 +518,13 @@ func TestUnion(t *testing.T) {
 								Case: ast.NewIntegerList(
 									ast.NewIntegerRangeLiteral(0xf2, 0xff),
 								),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.StructMember{Name: "ext", Ref: &ast.StructRef{Name: "extension"}},
 								},
 							},
 							&ast.UnionCase{
-								Case:   nil, // default
-								Fields: &ast.Fail{},
+								Case:    nil, // default
+								Members: []ast.Member{&ast.Fail{}},
 							},
 						},
 					},
@@ -563,19 +563,19 @@ func TestUnionExtentSpec(t *testing.T) {
 						Length: &ast.IDRef{Name: "length"},
 						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
-								Case:   ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(7)),
-								Fields: &ast.Ignore{},
+								Case:    ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(7)),
+								Members: []ast.Member{&ast.Ignore{}},
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xee)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
 									&ast.Ignore{},
 								},
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xef)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
 									&ast.VarArrayMember{
 										Base:       ast.U8,
@@ -586,7 +586,7 @@ func TestUnionExtentSpec(t *testing.T) {
 							},
 							&ast.UnionCase{
 								Case: nil,
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.VarArrayMember{
 										Base:       ast.U8,
 										Name:       "unrecognized",
@@ -628,7 +628,7 @@ func TestUnionMembersAfter(t *testing.T) {
 						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(1)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.VarArrayMember{
 										Base:       ast.U8,
 										Name:       "bytes",
@@ -638,7 +638,7 @@ func TestUnionMembersAfter(t *testing.T) {
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(2)),
-								Fields: []ast.Member{
+								Members: []ast.Member{
 									&ast.FixedArrayMember{
 										Base: ast.U8,
 										Name: "salt",

@@ -292,8 +292,9 @@ UnionLength <- "with" __ "length" __ l:LengthConstraint {
 //  UnionMember ::= UnionCase : UnionFields OptExtentSpec XXX extent spec
 
 UnionMember <- _ cse:UnionCase _ ':' _ fs:UnionBody _ {
-  uc := &ast.UnionCase{
-    Fields: fs,
+  uc := &ast.UnionCase{}
+  if fs != nil {
+    uc.Members = fs.([]ast.Member)
   }
   if cse != nil {
     uc.Case = cse.(*ast.IntegerList)
@@ -320,9 +321,9 @@ UnionCase <- l:IntList {
 UnionBody <- _ ';' {
   return nil, nil
 } / "fail" _ ';' {
-  return &ast.Fail{}, nil
+  return []ast.Member{&ast.Fail{}}, nil
 } / "ignore" _ ';' {
-  return &ast.Ignore{}, nil
+  return []ast.Member{&ast.Ignore{}}, nil
 } / fs:UnionFields {
   return fs, nil
 }
