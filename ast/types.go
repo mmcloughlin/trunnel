@@ -80,7 +80,7 @@ type UnionMember struct {
 	Name   string
 	Tag    *IDRef
 	Length LengthConstraint
-	Cases  interface{}
+	Cases  []*UnionCase
 }
 
 // UnionCase is a case in a union.

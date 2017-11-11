@@ -480,7 +480,7 @@ func TestUnion(t *testing.T) {
 					&ast.UnionMember{
 						Name: "addr",
 						Tag:  &ast.IDRef{Name: "tag"},
-						Cases: []interface{}{
+						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(4)),
 								Fields: []ast.Member{
@@ -561,7 +561,7 @@ func TestUnionExtentSpec(t *testing.T) {
 						Name:   "addr",
 						Tag:    &ast.IDRef{Name: "tag"},
 						Length: &ast.IDRef{Name: "length"},
-						Cases: []interface{}{
+						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
 								Case:   ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(7)),
 								Fields: &ast.Ignore{},
@@ -625,7 +625,7 @@ func TestUnionMembersAfter(t *testing.T) {
 						Name:   "u",
 						Tag:    &ast.IDRef{Name: "type"},
 						Length: &ast.Leftover{Num: &ast.IntegerLiteral{Value: 32}},
-						Cases: []interface{}{
+						Cases: []*ast.UnionCase{
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(1)),
 								Fields: []ast.Member{

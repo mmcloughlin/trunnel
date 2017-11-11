@@ -270,10 +270,14 @@ SMStruct <- s:StructRef __ n:Identifier {
 //  SMUnion ::= union ID [ IDRef ] OptUnionLength { UnionMembers }
 
 SMUnion <- "union" __ n:Identifier _ '[' t:IDRef ']' _ l:UnionLength? _ '{' _ cs:UnionMember* _ '}' {
+  cases := make([]*ast.UnionCase, 0)
+  for _, i := range cs.([]interface{}) {
+    cases = append(cases, i.(*ast.UnionCase))
+  }
   u := &ast.UnionMember{
     Name: n.(string),
     Tag: t.(*ast.IDRef),
-    Cases: cs,
+    Cases: cases,
   }
   if l != nil {
     u.Length = l.(ast.LengthConstraint)
