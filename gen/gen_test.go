@@ -14,32 +14,60 @@ import (
 
 var update = flag.Bool("update", false, "update golden files")
 
-func PackageName(path string) string {
-	return filepath.Base(filepath.Dir(path))
+type TestCase struct {
+	TrunnelFile string
+	Dir         string
+	Name        string
 }
 
-func GoFilename(path string) string {
-	return strings.TrimSuffix(path, filepath.Ext(path)) + ".go"
+func NewTestCaseFromTrunnel(path string) TestCase {
+	dir, file := filepath.Split(path)
+	name := strings.TrimSuffix(file, filepath.Ext(file))
+	return TestCase{
+		TrunnelFile: path,
+		Dir:         dir,
+		Name:        name,
+	}
+}
+
+func LoadTestCasesGlob(pattern string) ([]TestCase, error) {
+	filenames, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, err
+	}
+	t := make([]TestCase, len(filenames))
+	for i, filename := range filenames {
+		t[i] = NewTestCaseFromTrunnel(filename)
+	}
+	return t, nil
+}
+
+func (t TestCase) PackageName() string {
+	return t.Name
+}
+
+func (t TestCase) GoFilename() string {
+	return filepath.Join(t.Dir, "gen-"+t.Name+".go")
 }
 
 func TestGeneratedFiles(t *testing.T) {
-	filenames, err := filepath.Glob("tests/*/*.trunnel")
+	cases, err := LoadTestCasesGlob("tests/*/*.trunnel")
 	require.NoError(t, err)
-	for _, filename := range filenames {
-		t.Run(filename, func(t *testing.T) {
-			f, err := parse.File(filename)
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			f, err := parse.File(c.TrunnelFile)
 			require.NoError(t, err)
 
-			pkg := PackageName(filename)
-			src, err := File(pkg, f)
+			src, err := File(c.PackageName(), f)
 			require.NoError(t, err)
 
 			if *update {
-				err = ioutil.WriteFile(GoFilename(filename), src, 0640)
+				err = ioutil.WriteFile(c.GoFilename(), src, 0640)
 				require.NoError(t, err)
 			}
 
-			expect, err := ioutil.ReadFile(GoFilename(filename))
+			expect, err := ioutil.ReadFile(c.GoFilename())
 			require.NoError(t, err)
 
 			assert.Equal(t, expect, src)
