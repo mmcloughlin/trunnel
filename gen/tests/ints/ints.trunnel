@@ -1,0 +1,6 @@
+struct ints {
+    u8 byte;
+    u16 word;
+    u32 dword;
+    u64 qword;
+}
