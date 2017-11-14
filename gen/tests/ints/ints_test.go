@@ -15,7 +15,7 @@ func TestIntsParseLengthErrors(t *testing.T) {
 	}
 }
 
-func TestColorStandard(t *testing.T) {
+func TestIntsStandard(t *testing.T) {
 	x := new(Ints)
 	b := []byte{
 		1,

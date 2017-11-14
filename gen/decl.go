@@ -120,6 +120,7 @@ func (g *generator) parseMember(receiver string, m ast.Member) {
 	case *ast.StructMember:
 		v := receiver + "." + Name(m.Name)
 		g.printf("var err error\n")
+		g.printf("%s = new(%s)\n", v, Name(m.Ref.Name))
 		g.printf("data, err = %s.Parse(data)\n", v)
 		g.printf("if err != nil { return nil, err }\n")
 
