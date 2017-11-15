@@ -1,0 +1,4 @@
+struct var_array {
+    u16 n_words;
+    u32 words[n_words];
+};

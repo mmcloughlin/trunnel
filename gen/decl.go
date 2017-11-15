@@ -26,6 +26,8 @@ func File(pkg string, f *ast.File) ([]byte, error) {
 type generator struct {
 	pkg string
 	w   io.Writer
+
+	receiver string // method receiver variable
 }
 
 func (g *generator) printf(format string, a ...interface{}) {
@@ -89,26 +91,27 @@ func (g *generator) structUnionMemberDecl(m *ast.UnionMember) {
 
 // parse generates a parse function for the type.
 func (g *generator) parse(s *ast.Struct) {
-	receiver := strings.ToLower(s.Name[:1])
-	g.printf("func (%s *%s) Parse(data []byte) ([]byte, error) {\n", receiver, name(s.Name))
+	g.receiver = strings.ToLower(s.Name[:1])
+	g.printf("func (%s *%s) Parse(data []byte) ([]byte, error) {\n", g.receiver, name(s.Name))
 	for _, m := range s.Members {
-		g.parseMember(receiver, m)
+		g.parseMember(m)
 	}
 	g.printf("return data, nil\n}\n\n")
+	g.receiver = ""
 }
 
-func (g *generator) parseMember(receiver string, m ast.Member) {
+func (g *generator) parseMember(m ast.Member) {
 	g.printf("{\n")
 	switch m := m.(type) {
 	case *ast.Field:
-		lhs := receiver + "." + name(m.Name)
+		lhs := g.receiver + "." + name(m.Name)
 		g.parseType(lhs, m.Type)
 
 	case *ast.EOS:
 		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 
 	default:
-		g.printf("// %s\n", unexpected(m)) // XXX
+		panic(unexpected(m))
 	}
 	g.printf("}\n")
 }
@@ -145,13 +148,41 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 		g.printf("if err != nil { return nil, err }\n")
 
 	case *ast.FixedArrayMember:
-		g.printf("for i := 0; i < %s; i++ {\n", integer(t.Size))
-		g.parseType(lhs+"[i]", t.Base)
-		g.printf("}\n")
+		g.parseArray(lhs, t.Base, t.Size)
+
+	case *ast.VarArrayMember:
+		g.parseArray(lhs, t.Base, t.Constraint)
 
 	default:
 		panic(unexpected(t))
 	}
+}
+
+func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint) {
+	switch s := s.(type) {
+	case *ast.IntegerConstRef, *ast.IntegerLiteral:
+		g.printf("for i := 0; i < %s; i++ {\n", integer(s))
+		g.parseType(lhs+"[i]", base)
+		g.printf("}\n")
+
+	case *ast.IDRef:
+		size := fmt.Sprintf("int(%s)", g.ref(s))
+		g.printf("%s = make([]%s, %s)\n", lhs, tipe(base), size)
+		g.printf("for i := 0; i < %s; i++ {\n", size)
+		g.parseType(lhs+"[i]", base)
+		g.printf("}\n")
+
+	default:
+		panic(unexpected(s))
+	}
+}
+
+// ref builds a variable reference that resolves to the given trunnel IDRef.
+func (g *generator) ref(r *ast.IDRef) string {
+	if r.Scope == "" {
+		return g.receiver + "." + name(r.Name)
+	}
+	panic("not implemented") // XXX
 }
 
 func (g *generator) lengthCheck(n int) {
@@ -183,6 +214,8 @@ func tipe(t interface{}) string {
 		return "*" + name(t.Name)
 	case *ast.FixedArrayMember:
 		return fmt.Sprintf("[%s]%s", integer(t.Size), tipe(t.Base))
+	case *ast.VarArrayMember:
+		return fmt.Sprintf("[]%s", tipe(t.Base))
 	default:
 		panic(unexpected(t))
 	}
