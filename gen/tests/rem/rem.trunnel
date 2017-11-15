@@ -1,0 +1,4 @@
+struct rem {
+    u32 head;
+    u8 tail[];
+};
