@@ -61,9 +61,9 @@ func TestStructBasic(t *testing.T) {
 			{
 				Name: "rgb",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "r"},
-					&ast.IntegerMember{Type: ast.U8, Name: "g"},
-					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+					&ast.Field{Type: ast.U8, Name: "r"},
+					&ast.Field{Type: ast.U8, Name: "g"},
+					&ast.Field{Type: ast.U8, Name: "b"},
 				},
 			},
 		},
@@ -107,10 +107,10 @@ func TestIntTypes(t *testing.T) {
 			{
 				Name: "s",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "a"},
-					&ast.IntegerMember{Type: ast.U16, Name: "b"},
-					&ast.IntegerMember{Type: ast.U32, Name: "c"},
-					&ast.IntegerMember{Type: ast.U64, Name: "d"},
+					&ast.Field{Type: ast.U8, Name: "a"},
+					&ast.Field{Type: ast.U16, Name: "b"},
+					&ast.Field{Type: ast.U32, Name: "c"},
+					&ast.Field{Type: ast.U64, Name: "d"},
 				},
 			},
 		},
@@ -120,7 +120,7 @@ func TestIntTypes(t *testing.T) {
 	assert.Equal(t, expect, f)
 }
 
-func TestIntegerMember(t *testing.T) {
+func TestField(t *testing.T) {
 	s := `
 	struct int_constraints {
 		u8 version_num IN [ 4, 5, 6 ];
@@ -134,50 +134,58 @@ func TestIntegerMember(t *testing.T) {
 			{
 				Name: "int_constraints",
 				Members: []ast.Member{
-					&ast.IntegerMember{
-						Type: ast.U8,
+					&ast.Field{
 						Name: "version_num",
-						Constraint: &ast.IntegerList{
-							Ranges: []*ast.IntegerRange{
-								{Low: &ast.IntegerLiteral{Value: 4}},
-								{Low: &ast.IntegerLiteral{Value: 5}},
-								{Low: &ast.IntegerLiteral{Value: 6}},
+						Type: &ast.IntType{
+							Size: 8,
+							Constraint: &ast.IntegerList{
+								Ranges: []*ast.IntegerRange{
+									{Low: &ast.IntegerLiteral{Value: 4}},
+									{Low: &ast.IntegerLiteral{Value: 5}},
+									{Low: &ast.IntegerLiteral{Value: 6}},
+								},
 							},
 						},
 					},
-					&ast.IntegerMember{
-						Type: ast.U16,
+					&ast.Field{
 						Name: "length",
-						Constraint: &ast.IntegerList{
-							Ranges: []*ast.IntegerRange{
-								{
-									Low:  &ast.IntegerLiteral{Value: 0},
-									High: &ast.IntegerLiteral{Value: 16384},
+						Type: &ast.IntType{
+							Size: 16,
+							Constraint: &ast.IntegerList{
+								Ranges: []*ast.IntegerRange{
+									{
+										Low:  &ast.IntegerLiteral{Value: 0},
+										High: &ast.IntegerLiteral{Value: 16384},
+									},
 								},
 							},
 						},
 					},
-					&ast.IntegerMember{
-						Type: ast.U16,
+					&ast.Field{
 						Name: "length2",
-						Constraint: &ast.IntegerList{
-							Ranges: []*ast.IntegerRange{
-								{
-									Low:  &ast.IntegerLiteral{},
-									High: &ast.IntegerConstRef{Name: "MAX_LEN"},
+						Type: &ast.IntType{
+							Size: 16,
+							Constraint: &ast.IntegerList{
+								Ranges: []*ast.IntegerRange{
+									{
+										Low:  &ast.IntegerLiteral{},
+										High: &ast.IntegerConstRef{Name: "MAX_LEN"},
+									},
 								},
 							},
 						},
 					},
-					&ast.IntegerMember{
-						Type: ast.U8,
+					&ast.Field{
 						Name: "version_num2",
-						Constraint: &ast.IntegerList{
-							Ranges: []*ast.IntegerRange{
-								{Low: &ast.IntegerLiteral{Value: 1}},
-								{Low: &ast.IntegerLiteral{Value: 2}},
-								{Low: &ast.IntegerLiteral{Value: 4}, High: &ast.IntegerLiteral{Value: 6}},
-								{Low: &ast.IntegerLiteral{Value: 9}, High: &ast.IntegerLiteral{Value: 128}},
+						Type: &ast.IntType{
+							Size: 8,
+							Constraint: &ast.IntegerList{
+								Ranges: []*ast.IntegerRange{
+									{Low: &ast.IntegerLiteral{Value: 1}},
+									{Low: &ast.IntegerLiteral{Value: 2}},
+									{Low: &ast.IntegerLiteral{Value: 4}, High: &ast.IntegerLiteral{Value: 6}},
+									{Low: &ast.IntegerLiteral{Value: 9}, High: &ast.IntegerLiteral{Value: 128}},
+								},
 							},
 						},
 					},
@@ -200,7 +208,10 @@ func TestNulTermString(t *testing.T) {
 			{
 				Name: "nul_term_string",
 				Members: []ast.Member{
-					&ast.NulTermString{Name: "str"},
+					&ast.Field{
+						Name: "str",
+						Type: &ast.NulTermString{},
+					},
 				},
 			},
 		},
@@ -223,23 +234,23 @@ func TestNestedStructs(t *testing.T) {
 			{
 				Name: "rgb",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "r"},
-					&ast.IntegerMember{Type: ast.U8, Name: "g"},
-					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+					&ast.Field{Type: ast.U8, Name: "r"},
+					&ast.Field{Type: ast.U8, Name: "g"},
+					&ast.Field{Type: ast.U8, Name: "b"},
 				},
 			},
 			{
 				Name: "outer",
 				Members: []ast.Member{
-					&ast.StructMember{Name: "color", Ref: &ast.StructRef{Name: "rgb"}},
-					&ast.StructMember{Name: "c", Ref: &ast.StructRef{Name: "inner"}},
+					&ast.Field{Name: "color", Type: &ast.StructRef{Name: "rgb"}},
+					&ast.Field{Name: "c", Type: &ast.StructRef{Name: "inner"}},
 				},
 			},
 			{
 				Name: "inner",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "a"},
-					&ast.IntegerMember{Type: ast.U64, Name: "b"},
+					&ast.Field{Type: ast.U8, Name: "a"},
+					&ast.Field{Type: ast.U64, Name: "b"},
 				},
 			},
 		},
@@ -260,20 +271,26 @@ func TestFixedArraySimple(t *testing.T) {
 			{
 				Name: "fixed_arrays",
 				Members: []ast.Member{
-					&ast.FixedArrayMember{
-						Base: ast.U8,
+					&ast.Field{
 						Name: "a",
-						Size: &ast.IntegerLiteral{Value: 8},
+						Type: &ast.FixedArrayMember{
+							Base: ast.U8,
+							Size: &ast.IntegerLiteral{Value: 8},
+						},
 					},
-					&ast.FixedArrayMember{
-						Base: ast.U32,
+					&ast.Field{
 						Name: "b",
-						Size: &ast.IntegerConstRef{Name: "SIZE"},
+						Type: &ast.FixedArrayMember{
+							Base: ast.U32,
+							Size: &ast.IntegerConstRef{Name: "SIZE"},
+						},
 					},
-					&ast.FixedArrayMember{
-						Base: &ast.CharType{},
+					&ast.Field{
 						Name: "s",
-						Size: &ast.IntegerLiteral{Value: 13},
+						Type: &ast.FixedArrayMember{
+							Base: &ast.CharType{},
+							Size: &ast.IntegerLiteral{Value: 13},
+						},
 					},
 				},
 			},
@@ -297,23 +314,27 @@ func TestFixedArrayStructs(t *testing.T) {
 			{
 				Name: "fixed_array_structs",
 				Members: []ast.Member{
-					&ast.FixedArrayMember{
-						Base: &ast.StructRef{Name: "another"},
+					&ast.Field{
 						Name: "x",
-						Size: &ast.IntegerLiteral{Value: 3},
+						Type: &ast.FixedArrayMember{
+							Base: &ast.StructRef{Name: "another"},
+							Size: &ast.IntegerLiteral{Value: 3},
+						},
 					},
-					&ast.FixedArrayMember{
-						Base: &ast.StructRef{Name: "inner"},
+					&ast.Field{
 						Name: "y",
-						Size: &ast.IntegerLiteral{Value: 7},
+						Type: &ast.FixedArrayMember{
+							Base: &ast.StructRef{Name: "inner"},
+							Size: &ast.IntegerLiteral{Value: 7},
+						},
 					},
 				},
 			},
 			{
 				Name: "inner",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "a"},
-					&ast.IntegerMember{Type: ast.U32, Name: "b"},
+					&ast.Field{Type: ast.U8, Name: "a"},
+					&ast.Field{Type: ast.U32, Name: "b"},
 				},
 			},
 		},
@@ -333,11 +354,13 @@ func TestVarLengthArray(t *testing.T) {
 			{
 				Name: "var_length_array",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U16, Name: "length"},
-					&ast.VarArrayMember{
-						Base:       ast.U8,
-						Name:       "bytes",
-						Constraint: &ast.IDRef{Name: "length"},
+					&ast.Field{Type: ast.U16, Name: "length"},
+					&ast.Field{
+						Name: "bytes",
+						Type: &ast.VarArrayMember{
+							Base:       ast.U8,
+							Constraint: &ast.IDRef{Name: "length"},
+						},
 					},
 				},
 			},
@@ -358,11 +381,13 @@ func TestRemainderArray(t *testing.T) {
 			{
 				Name: "remainder_array",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "x"},
-					&ast.VarArrayMember{
-						Base:       ast.U8,
-						Name:       "rest",
-						Constraint: nil,
+					&ast.Field{Type: ast.U8, Name: "x"},
+					&ast.Field{
+						Name: "rest",
+						Type: &ast.VarArrayMember{
+							Base:       ast.U8,
+							Constraint: nil,
+						},
 					},
 				},
 			},
@@ -384,8 +409,8 @@ func TestEOS(t *testing.T) {
 			{
 				Name: "fourbytes",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U16, Name: "x"},
-					&ast.IntegerMember{Type: ast.U16, Name: "y"},
+					&ast.Field{Type: ast.U16, Name: "x"},
+					&ast.Field{Type: ast.U16, Name: "y"},
 					&ast.EOS{},
 				},
 			},
@@ -406,11 +431,13 @@ func TestVarLengthString(t *testing.T) {
 			{
 				Name: "pascal_string",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "hostname_len"},
-					&ast.VarArrayMember{
-						Base:       &ast.CharType{},
-						Name:       "hostname",
-						Constraint: &ast.IDRef{Name: "hostname_len"},
+					&ast.Field{Type: ast.U8, Name: "hostname_len"},
+					&ast.Field{
+						Name: "hostname",
+						Type: &ast.VarArrayMember{
+							Base:       &ast.CharType{},
+							Constraint: &ast.IDRef{Name: "hostname_len"},
+						},
 					},
 				},
 			},
@@ -432,22 +459,28 @@ func TestLeftoverLengthArray(t *testing.T) {
 			{
 				Name: "encrypted",
 				Members: []ast.Member{
-					&ast.FixedArrayMember{
-						Base: ast.U8,
+					&ast.Field{
 						Name: "salt",
-						Size: &ast.IntegerLiteral{Value: 16},
-					},
-					&ast.VarArrayMember{
-						Base: ast.U8,
-						Name: "message",
-						Constraint: &ast.Leftover{
-							Num: &ast.IntegerLiteral{Value: 32},
+						Type: &ast.FixedArrayMember{
+							Base: ast.U8,
+							Size: &ast.IntegerLiteral{Value: 16},
 						},
 					},
-					&ast.FixedArrayMember{
-						Base: ast.U8,
+					&ast.Field{
+						Name: "message",
+						Type: &ast.VarArrayMember{
+							Base: ast.U8,
+							Constraint: &ast.Leftover{
+								Num: &ast.IntegerLiteral{Value: 32},
+							},
+						},
+					},
+					&ast.Field{
 						Name: "mac",
-						Size: &ast.IntegerLiteral{Value: 32},
+						Type: &ast.FixedArrayMember{
+							Base: ast.U8,
+							Size: &ast.IntegerLiteral{Value: 32},
+						},
 					},
 				},
 			},
@@ -476,7 +509,7 @@ func TestUnion(t *testing.T) {
 			{
 				Name: "has_union",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "tag"},
+					&ast.Field{Type: ast.U8, Name: "tag"},
 					&ast.UnionMember{
 						Name: "addr",
 						Tag:  &ast.IDRef{Name: "tag"},
@@ -484,7 +517,7 @@ func TestUnion(t *testing.T) {
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(4)),
 								Members: []ast.Member{
-									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
+									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
 								},
 							},
 							&ast.UnionCase{
@@ -493,10 +526,12 @@ func TestUnion(t *testing.T) {
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(6)),
 								Members: []ast.Member{
-									&ast.FixedArrayMember{
-										Base: ast.U8,
+									&ast.Field{
 										Name: "ipv6_addr",
-										Size: &ast.IntegerLiteral{Value: 16},
+										Type: &ast.FixedArrayMember{
+											Base: ast.U8,
+											Size: &ast.IntegerLiteral{Value: 16},
+										},
 									},
 								},
 							},
@@ -506,11 +541,13 @@ func TestUnion(t *testing.T) {
 									ast.NewIntegerRangeSingleLiteral(0xf1),
 								),
 								Members: []ast.Member{
-									&ast.IntegerMember{Type: ast.U8, Name: "hostname_len"},
-									&ast.VarArrayMember{
-										Base:       &ast.CharType{},
-										Name:       "hostname",
-										Constraint: &ast.IDRef{Name: "hostname_len"},
+									&ast.Field{Type: ast.U8, Name: "hostname_len"},
+									&ast.Field{
+										Name: "hostname",
+										Type: &ast.VarArrayMember{
+											Base:       &ast.CharType{},
+											Constraint: &ast.IDRef{Name: "hostname_len"},
+										},
 									},
 								},
 							},
@@ -519,7 +556,7 @@ func TestUnion(t *testing.T) {
 									ast.NewIntegerRangeLiteral(0xf2, 0xff),
 								),
 								Members: []ast.Member{
-									&ast.StructMember{Name: "ext", Ref: &ast.StructRef{Name: "extension"}},
+									&ast.Field{Name: "ext", Type: &ast.StructRef{Name: "extension"}},
 								},
 							},
 							&ast.UnionCase{
@@ -555,8 +592,8 @@ func TestUnionExtentSpec(t *testing.T) {
 			{
 				Name: "union_extent",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "tag"},
-					&ast.IntegerMember{Type: ast.U16, Name: "length"},
+					&ast.Field{Type: ast.U8, Name: "tag"},
+					&ast.Field{Type: ast.U16, Name: "length"},
 					&ast.UnionMember{
 						Name:   "addr",
 						Tag:    &ast.IDRef{Name: "tag"},
@@ -569,28 +606,32 @@ func TestUnionExtentSpec(t *testing.T) {
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xee)),
 								Members: []ast.Member{
-									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
+									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
 									&ast.Ignore{},
 								},
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xef)),
 								Members: []ast.Member{
-									&ast.IntegerMember{Type: ast.U32, Name: "ipv4_addr"},
-									&ast.VarArrayMember{
-										Base:       ast.U8,
-										Name:       "remainder",
-										Constraint: nil,
+									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
+									&ast.Field{
+										Name: "remainder",
+										Type: &ast.VarArrayMember{
+											Base:       ast.U8,
+											Constraint: nil,
+										},
 									},
 								},
 							},
 							&ast.UnionCase{
 								Case: nil,
 								Members: []ast.Member{
-									&ast.VarArrayMember{
-										Base:       ast.U8,
-										Name:       "unrecognized",
-										Constraint: nil,
+									&ast.Field{
+										Name: "unrecognized",
+										Type: &ast.VarArrayMember{
+											Base:       ast.U8,
+											Constraint: nil,
+										},
 									},
 								},
 							},
@@ -620,7 +661,7 @@ func TestUnionMembersAfter(t *testing.T) {
 			{
 				Name: "encrypted",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "type"},
+					&ast.Field{Type: ast.U8, Name: "type"},
 					&ast.UnionMember{
 						Name:   "u",
 						Tag:    &ast.IDRef{Name: "type"},
@@ -629,34 +670,42 @@ func TestUnionMembersAfter(t *testing.T) {
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(1)),
 								Members: []ast.Member{
-									&ast.VarArrayMember{
-										Base:       ast.U8,
-										Name:       "bytes",
-										Constraint: nil,
+									&ast.Field{
+										Name: "bytes",
+										Type: &ast.VarArrayMember{
+											Base:       ast.U8,
+											Constraint: nil,
+										},
 									},
 								},
 							},
 							&ast.UnionCase{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(2)),
 								Members: []ast.Member{
-									&ast.FixedArrayMember{
-										Base: ast.U8,
+									&ast.Field{
 										Name: "salt",
-										Size: &ast.IntegerLiteral{Value: 16},
+										Type: &ast.FixedArrayMember{
+											Base: ast.U8,
+											Size: &ast.IntegerLiteral{Value: 16},
+										},
 									},
-									&ast.VarArrayMember{
-										Base:       ast.U8,
-										Name:       "other_bytes",
-										Constraint: nil,
+									&ast.Field{
+										Name: "other_bytes",
+										Type: &ast.VarArrayMember{
+											Base:       ast.U8,
+											Constraint: nil,
+										},
 									},
 								},
 							},
 						},
 					},
-					&ast.FixedArrayMember{
-						Base: ast.U64,
+					&ast.Field{
 						Name: "data",
-						Size: &ast.IntegerLiteral{Value: 4},
+						Type: &ast.FixedArrayMember{
+							Base: ast.U64,
+							Size: &ast.IntegerLiteral{Value: 4},
+						},
 					},
 				},
 			},
@@ -717,9 +766,9 @@ func TestComments(t *testing.T) {
 			{
 				Name: "rgb",
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "r"},
-					&ast.IntegerMember{Type: ast.U8, Name: "g"},
-					&ast.IntegerMember{Type: ast.U8, Name: "b"},
+					&ast.Field{Type: ast.U8, Name: "r"},
+					&ast.Field{Type: ast.U8, Name: "g"},
+					&ast.Field{Type: ast.U8, Name: "b"},
 				},
 			},
 		},
@@ -735,11 +784,11 @@ func TestContext(t *testing.T) {
 		Contexts: []*ast.Context{
 			{
 				Name: "ctx",
-				Members: []*ast.IntegerMember{
-					&ast.IntegerMember{Type: ast.U8, Name: "a"},
-					&ast.IntegerMember{Type: ast.U16, Name: "b"},
-					&ast.IntegerMember{Type: ast.U32, Name: "c"},
-					&ast.IntegerMember{Type: ast.U64, Name: "d"},
+				Members: []*ast.Field{
+					&ast.Field{Type: ast.U8, Name: "a"},
+					&ast.Field{Type: ast.U16, Name: "b"},
+					&ast.Field{Type: ast.U32, Name: "c"},
+					&ast.Field{Type: ast.U64, Name: "d"},
 				},
 			},
 		},
@@ -783,12 +832,14 @@ func TestStructWithContext(t *testing.T) {
 				Name:     "encrypted_record",
 				Contexts: []string{"stream_settings"},
 				Members: []ast.Member{
-					&ast.VarArrayMember{
-						Base: ast.U8,
+					&ast.Field{
 						Name: "iv",
-						Constraint: &ast.IDRef{
-							Scope: "stream_settings",
-							Name:  "iv_len",
+						Type: &ast.VarArrayMember{
+							Base: ast.U8,
+							Constraint: &ast.IDRef{
+								Scope: "stream_settings",
+								Name:  "iv_len",
+							},
 						},
 					},
 				},
@@ -810,7 +861,7 @@ func TestStructWithMultipleContexts(t *testing.T) {
 				Name:     "multi",
 				Contexts: []string{"ctx0", "ctx1", "ctx2", "ctx3"},
 				Members: []ast.Member{
-					&ast.IntegerMember{Type: ast.U8, Name: "x"},
+					&ast.Field{Type: ast.U8, Name: "x"},
 				},
 			},
 		},
@@ -834,11 +885,11 @@ func TestStructPtr(t *testing.T) {
 			{
 				Name: "haspos",
 				Members: []ast.Member{
-					&ast.NulTermString{Name: "s1"},
-					&ast.Ptr{Name: "pos1"},
-					&ast.NulTermString{Name: "s2"},
-					&ast.Ptr{Name: "pos2"},
-					&ast.IntegerMember{Type: ast.U32, Name: "x"},
+					&ast.Field{Name: "s1", Type: &ast.NulTermString{}},
+					&ast.Field{Name: "pos1", Type: &ast.Ptr{}},
+					&ast.Field{Name: "s2", Type: &ast.NulTermString{}},
+					&ast.Field{Name: "pos2", Type: &ast.Ptr{}},
+					&ast.Field{Type: ast.U32, Name: "x"},
 				},
 			},
 		},

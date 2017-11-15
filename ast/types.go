@@ -10,6 +10,9 @@ type File struct {
 	Pragmas   []*Pragma
 }
 
+// Declarations
+// -----------------------------------------------------------------------------
+
 // Constant is a constant declaration.
 type Constant struct {
 	Name  string
@@ -19,7 +22,7 @@ type Constant struct {
 // Context is a context declaration.
 type Context struct {
 	Name    string
-	Members []*IntegerMember
+	Members []*Field
 }
 
 // Struct is a struct declaration.
@@ -29,50 +32,28 @@ type Struct struct {
 	Members  []Member
 }
 
+// ExternStruct is a declaration that a Trunnel structure is available
+// elsewhere.
+type ExternStruct struct {
+	Name     string
+	Contexts []string
+}
+
+// Pragma represents a directive to trunnel.
+type Pragma struct {
+	Type    string
+	Options []string
+}
+
+// Struct Members
+// -----------------------------------------------------------------------------
+
 // Member is a field in a struct definition.
 type Member interface{}
 
-// IntegerMember is an integer struct member.
-type IntegerMember struct {
-	Type       *IntType
-	Name       string
-	Constraint *IntegerList
-}
-
-// ArrayBase is a type that can be stored in an array.
-type ArrayBase interface{}
-
-// FixedArrayMember is a fixed-length array struct member.
-type FixedArrayMember struct {
-	Base ArrayBase
+type Field struct {
 	Name string
-	Size Integer
-}
-
-// VarArrayMember is a variable-length array struct member.
-type VarArrayMember struct {
-	Base       ArrayBase
-	Name       string
-	Constraint LengthConstraint // nil means remainder
-}
-
-// Ptr signals a request to store a pointer to a location within a struct.
-type Ptr struct {
-	Name string
-}
-
-// EOS signals "end of struct".
-type EOS struct{}
-
-// NulTermString is a NUL-terminated string struct member.
-type NulTermString struct {
-	Name string
-}
-
-// StructMember is a struct type member of a struct.
-type StructMember struct {
-	Ref  *StructRef
-	Name string
+	Type Type
 }
 
 // UnionMember is a union member of a struct.
@@ -83,24 +64,19 @@ type UnionMember struct {
 	Cases  []*UnionCase
 }
 
-// UnionCase is a case in a union.
-type UnionCase struct {
-	Case    *IntegerList // nil is the default case
-	Members []Member
-}
+// EOS signals "end of struct".
+type EOS struct{}
 
-// Fail directive for a union case.
-type Fail struct{}
+// Types
+// -----------------------------------------------------------------------------
 
-// Ignore directive in a union case.
-type Ignore struct{}
-
-// CharType represents the character type.
-type CharType struct{}
+// Type is a type.
+type Type interface{}
 
 // IntType represents an integer type (u8, u16, u32 and u64).
 type IntType struct {
-	Size int
+	Size       int
+	Constraint *IntegerList
 }
 
 // Possible IntTypes.
@@ -116,18 +92,47 @@ type StructRef struct {
 	Name string
 }
 
-// ExternStruct is a declaration that a Trunnel structure is available
-// elsewhere.
-type ExternStruct struct {
-	Name     string
-	Contexts []string
+// Ptr signals a request to store a pointer to a location within a struct.
+type Ptr struct{}
+
+// NulTermString is a NUL-terminated string type.
+type NulTermString struct{}
+
+// CharType represents the character type.
+type CharType struct{}
+
+// ArrayBase is a type that can be stored in an array.
+type ArrayBase interface{}
+
+// FixedArrayMember is a fixed-length array.
+type FixedArrayMember struct {
+	Base ArrayBase
+	Size Integer
 }
 
-// Pragma represents a directive to trunnel.
-type Pragma struct {
-	Type    string
-	Options []string
+// VarArrayMember is a variable-length array.
+type VarArrayMember struct {
+	Base       ArrayBase
+	Constraint LengthConstraint // nil means remainder
 }
+
+// Unions
+// -----------------------------------------------------------------------------
+
+// UnionCase is a case in a union.
+type UnionCase struct {
+	Case    *IntegerList // nil is the default case
+	Members []Member
+}
+
+// Fail directive for a union case.
+type Fail struct{}
+
+// Ignore directive in a union case.
+type Ignore struct{}
+
+// Other
+// -----------------------------------------------------------------------------
 
 // Integer specifies an integer (either directly or via a constant reference).
 type Integer interface{}

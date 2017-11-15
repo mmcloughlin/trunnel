@@ -72,19 +72,19 @@ ConstDeclaration <- "const" __ n:ConstIdentifier _ '=' _ v:IntLiteral _ ';' {
 //  ContextMembers ::=
 //  ContextMembers ::= ContextMembers OptAnnotation ContextMember
 
-ContextDeclaration <- "context" __ n:Identifier __ '{' _ ms:ContextMember* _ '}' _ ';'? {
-  m := make([]*ast.IntegerMember, 0)
-  for _, i := range ms.([]interface{}) {
-    m = append(m, i.(*ast.IntegerMember))
+ContextDeclaration <- "context" __ n:Identifier __ '{' _ fs:ContextMember* _ '}' _ ';'? {
+  f := make([]*ast.Field, 0)
+  for _, i := range fs.([]interface{}) {
+    f = append(f, i.(*ast.Field))
   }
   return &ast.Context{
     Name: n.(string),
-    Members: m,
+    Members: f,
   }, nil
 }
 
 ContextMember <- _ t:IntType __ n:Identifier _ ';' _ {
-  return &ast.IntegerMember{
+  return &ast.Field{
     Type: t.(*ast.IntType),
     Name: n.(string),
   }, nil
@@ -184,10 +184,12 @@ SMArray <- a:(SMFixedArray / SMVarArray) {
 //  SMFixedArray ::= ArrayBase ID [ Integer ]
 
 SMFixedArray <- b:ArrayBase __ n:Identifier _ '[' s:Integer ']' {
-  return &ast.FixedArrayMember{
-    Base: b.(ast.ArrayBase),
+  return &ast.Field{
     Name: n.(string),
-    Size: s.(ast.Integer),
+    Type: &ast.FixedArrayMember{
+      Base: b.(ast.ArrayBase),
+      Size: s.(ast.Integer),
+    },
   }, nil
 }
 
@@ -195,10 +197,12 @@ SMFixedArray <- b:ArrayBase __ n:Identifier _ '[' s:Integer ']' {
 //  SMVarArray ::= ArrayBase ID [ IDRef ]
 
 SMVarArray <- b:ArrayBase __ n:Identifier _ '[' l:LengthConstraint ']' {
-  return &ast.VarArrayMember{
-    Base: b.(ast.ArrayBase),
+  return &ast.Field{
     Name: n.(string),
-    Constraint: l.(ast.LengthConstraint),
+    Type: &ast.VarArrayMember{
+      Base: b.(ast.ArrayBase),
+      Constraint: l.(ast.LengthConstraint),
+    },
   }, nil
 }
 
@@ -213,10 +217,12 @@ Leftover <- "..-" i:Integer {
 //  SMRemainder ::= OptAnnotation ArrayBase ID [ ] XXX annotation
 
 SMRemainder <- b:ArrayBase __ n:Identifier _ '[' _ ']' {
-  return &ast.VarArrayMember{
-    Base: b.(ast.ArrayBase),
+  return &ast.Field{
     Name: n.(string),
-    Constraint: nil,
+    Type: &ast.VarArrayMember{
+      Base: b.(ast.ArrayBase),
+      Constraint: nil,
+    },
   }, nil
 }
 
@@ -233,37 +239,41 @@ ArrayBase <- t:(IntType / CharType / StructRef) {
 //  SMInteger ::= IntType ID OptIntConstraint
 
 SMInteger <- t:IntType _ n:Identifier _ cst:IntConstraint? {
-  m := &ast.IntegerMember{
-    Type: t.(*ast.IntType),
-    Name: n.(string),
-  }
+  i := t.(*ast.IntType)
   if cst != nil {
-    m.Constraint = cst.(*ast.IntegerList)
+    i.Constraint = cst.(*ast.IntegerList)
   }
-  return m, nil
+  return &ast.Field{
+    Name: n.(string),
+    Type: i,
+  }, nil
 }
 
 // SMPosition ::= @ PtrKW ID
 
 SMPosition <- "@ptr" __ n:Identifier {
-  return &ast.Ptr{
+  return &ast.Field{
     Name: n.(string),
+    Type: &ast.Ptr{},
   }, nil
 }
 
 //  SMString ::= nulterm ID
 
 SMString <- "nulterm" __ n:Identifier {
-  return &ast.NulTermString{Name: n.(string)}, nil
+  return &ast.Field{
+    Name: n.(string),
+    Type: &ast.NulTermString{},
+  }, nil
 }
 
 //  SMStruct ::= StructDecl ID
 //  SMStruct ::= struct ID ID
 
 SMStruct <- s:StructRef __ n:Identifier {
-  return &ast.StructMember{
+  return &ast.Field{
     Name: n.(string),
-    Ref: s.(*ast.StructRef),
+    Type: s.(*ast.StructRef),
   }, nil
 }
 
