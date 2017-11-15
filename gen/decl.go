@@ -19,6 +19,7 @@ func File(pkg string, f *ast.File) ([]byte, error) {
 		w:   buf,
 	}
 	g.file(f)
+	fmt.Println(buf.String())
 	return imports.Process("", buf.Bytes(), nil)
 }
 

@@ -1,0 +1,3 @@
+const TEST_DEC = 42;
+const TEST_HEX = 0x42;
+const TEST_OCT = 042;
