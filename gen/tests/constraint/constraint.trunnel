@@ -1,0 +1,13 @@
+/** You can put constraints on integers.
+ *
+ *  You can also put in doxygen comments before structures and fields to make
+ *  them documented. */
+struct date {
+   /** You can use a range for a constraint */
+   u16 year IN [ 1970..65535 ];
+   /** You can use a list too */
+   u8 month IN [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ];
+   /** You can combine lists and ranges, even though this is a little silly:
+    * we could write this as 1..31 instead. */
+   u8 day IN [ 1,2,3..31 ];
+}

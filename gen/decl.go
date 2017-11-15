@@ -128,6 +128,11 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 		} else {
 			g.printf("%s = binary.BigEndian.Uint%d(data)\n", lhs, t.Size)
 		}
+		if t.Constraint != nil {
+			g.printf("if !(%s) {\n", conditional(lhs, t.Constraint))
+			g.printf("return nil, errors.New(\"integer constraint violated\")\n")
+			g.printf("}\n")
+		}
 		g.printf("data = data[%d:]", n)
 
 	case *ast.CharType:
@@ -151,6 +156,19 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 
 func (g *generator) lengthCheck(n int) {
 	g.printf("if len(data) < %d { return nil, errors.New(\"data too short\") }\n", n)
+}
+
+func conditional(v string, c *ast.IntegerList) string {
+	clauses := make([]string, len(c.Ranges))
+	for i, r := range c.Ranges {
+		// Single case
+		if r.High == nil {
+			clauses[i] = fmt.Sprintf("%s == %s", v, integer(r.Low))
+		} else {
+			clauses[i] = fmt.Sprintf("(%s <= %s && %s <= %s)", integer(r.Low), v, v, integer(r.High))
+		}
+	}
+	return strings.Join(clauses, " || ")
 }
 
 func tipe(t interface{}) string {
