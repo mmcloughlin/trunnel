@@ -1,0 +1,5 @@
+struct nulterm {
+    u32 x;
+    nulterm s;
+    u8 y;
+}
