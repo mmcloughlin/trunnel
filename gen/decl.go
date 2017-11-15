@@ -125,7 +125,7 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 
 	case *ast.IntType:
 		n := t.Size / 8
-		g.lengthCheck(n)
+		g.lengthCheck(strconv.Itoa(n))
 		if n == 1 {
 			g.printf("%s = data[0]\n", lhs)
 		} else {
@@ -136,7 +136,7 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 			g.printf("return nil, errors.New(\"integer constraint violated\")\n")
 			g.printf("}\n")
 		}
-		g.printf("data = data[%d:]", n)
+		g.printf("data = data[%d:]\n", n)
 
 	case *ast.CharType:
 		g.parseType(lhs, ast.U8)
@@ -172,6 +172,21 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 		g.parseType(lhs+"[i]", base)
 		g.printf("}\n")
 
+	case *ast.Leftover:
+		g.lengthCheck(integer(s.Num))
+		g.printf("restore := data[len(data)-%s:]\n", integer(s.Num))
+		g.printf("data = data[:len(data)-%s]\n", integer(s.Num))
+		g.parseArray(lhs, base, nil)
+		g.printf("data = restore\n")
+
+	case nil:
+		g.printf("%s = make([]%s, 0)\n", lhs, tipe(base))
+		g.printf("for len(data) > 0 {\n")
+		g.printf("var t %s\n", tipe(base))
+		g.parseType("t", base)
+		g.printf("%s = append(%s, t)\n", lhs, lhs)
+		g.printf("}\n")
+
 	default:
 		panic(unexpected(s))
 	}
@@ -185,8 +200,8 @@ func (g *generator) ref(r *ast.IDRef) string {
 	panic("not implemented") // XXX
 }
 
-func (g *generator) lengthCheck(n int) {
-	g.printf("if len(data) < %d { return nil, errors.New(\"data too short\") }\n", n)
+func (g *generator) lengthCheck(min string) {
+	g.printf("if len(data) < %s { return nil, errors.New(\"data too short\") }\n", min)
 }
 
 func conditional(v string, c *ast.IntegerList) string {

@@ -1,0 +1,5 @@
+struct leftover {
+   u32 head[2];
+   u32 mid[..-8];
+   u32 tail[2];
+};
