@@ -7,6 +7,6 @@ import (
 	"github.com/serenize/snaker"
 )
 
-func Name(n string) string {
+func name(n string) string {
 	return snaker.SnakeToCamel(strings.ToLower(n))
 }
