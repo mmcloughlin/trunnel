@@ -62,16 +62,8 @@ func (g *generator) structDecl(s *ast.Struct) {
 
 func (g *generator) structMemberDecl(m ast.Member) {
 	switch m := m.(type) {
-	case *ast.NulTermString:
-		g.printf("\t%s string\n", name(m.Name))
-	case *ast.IntegerMember:
-		g.printf("\t%s uint%d\n", name(m.Name), m.Type.Size)
-	case *ast.StructMember:
-		g.printf("\t%s *%s\n", name(m.Name), name(m.Ref.Name))
-	case *ast.FixedArrayMember:
-		g.printf("\t%s [%s]%s\n", name(m.Name), integer(m.Size), tipe(m.Base))
-	case *ast.VarArrayMember:
-		g.printf("\t%s []%s\n", name(m.Name), tipe(m.Base))
+	case *ast.Field:
+		g.printf("\t%s %s\n", name(m.Name), tipe(m.Type))
 	case *ast.UnionMember:
 		g.structUnionMemberDecl(m)
 	case *ast.EOS:
@@ -107,38 +99,45 @@ func (g *generator) parse(s *ast.Struct) {
 func (g *generator) parseMember(receiver string, m ast.Member) {
 	g.printf("{\n")
 	switch m := m.(type) {
-	case *ast.NulTermString:
-		v := receiver + "." + name(m.Name)
-		g.printf("i := bytes.IndexByte(data, 0)\n")
-		g.printf("if i < 0 { return nil, errors.New(\"could not parse nul-term string\") }\n")
-		g.printf("%s, data = string(data[:i]), data[i+1:]\n", v)
-
-	case *ast.IntegerMember:
-		v := receiver + "." + name(m.Name)
-		n := m.Type.Size / 8
-		g.lengthCheck(n)
-		if n == 1 {
-			g.printf("%s = data[0]\n", v)
-		} else {
-			g.printf("%s = binary.BigEndian.Uint%d(data)\n", v, m.Type.Size)
-		}
-		g.printf("data = data[%d:]", n)
-
-	case *ast.StructMember:
-		v := receiver + "." + name(m.Name)
-		g.printf("var err error\n")
-		g.printf("%s = new(%s)\n", v, name(m.Ref.Name))
-		g.printf("data, err = %s.Parse(data)\n", v)
-		g.printf("if err != nil { return nil, err }\n")
+	case *ast.Field:
+		lhs := receiver + "." + name(m.Name)
+		g.parseType(lhs, m.Type)
 
 	case *ast.EOS:
 		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 
 	default:
-		// XXX panic(unexpected(m))
-		g.printf("// %s\n", unexpected(m))
+		g.printf("// %s\n", unexpected(m)) // XXX
 	}
 	g.printf("}\n")
+}
+
+func (g *generator) parseType(lhs string, t ast.Type) {
+	switch t := t.(type) {
+	case *ast.NulTermString:
+		g.printf("i := bytes.IndexByte(data, 0)\n")
+		g.printf("if i < 0 { return nil, errors.New(\"could not parse nul-term string\") }\n")
+		g.printf("%s, data = string(data[:i]), data[i+1:]\n", lhs)
+
+	case *ast.IntType:
+		n := t.Size / 8
+		g.lengthCheck(n)
+		if n == 1 {
+			g.printf("%s = data[0]\n", lhs)
+		} else {
+			g.printf("%s = binary.BigEndian.Uint%d(data)\n", lhs, t.Size)
+		}
+		g.printf("data = data[%d:]", n)
+
+	case *ast.StructRef:
+		g.printf("var err error\n")
+		g.printf("%s = new(%s)\n", lhs, name(t.Name))
+		g.printf("data, err = %s.Parse(data)\n", lhs)
+		g.printf("if err != nil { return nil, err }\n")
+
+	default:
+		panic(unexpected(t))
+	}
 }
 
 func (g *generator) lengthCheck(n int) {
@@ -147,12 +146,14 @@ func (g *generator) lengthCheck(n int) {
 
 func tipe(t interface{}) string {
 	switch t := t.(type) {
+	case *ast.NulTermString:
+		return "string"
 	case *ast.IntType:
 		return "uint" + strconv.Itoa(t.Size)
 	case *ast.CharType:
 		return "byte"
 	case *ast.StructRef:
-		return "*" + t.Name
+		return "*" + name(t.Name)
 	default:
 		panic(unexpected(t))
 	}
