@@ -1,4 +1,4 @@
-struct nulterm {
+struct nul_term {
     u32 x;
     nulterm s;
     u8 y;

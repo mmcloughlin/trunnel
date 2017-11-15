@@ -8,13 +8,13 @@ import (
 	"errors"
 )
 
-type Nulterm struct {
+type NulTerm struct {
 	X uint32
 	S string
 	Y uint8
 }
 
-func (n *Nulterm) Parse(data []byte) ([]byte, error) {
+func (n *NulTerm) Parse(data []byte) ([]byte, error) {
 	{
 		if len(data) < 4 {
 			return nil, errors.New("data too short")

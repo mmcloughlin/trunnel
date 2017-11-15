@@ -8,7 +8,7 @@ import (
 )
 
 func TestNultermParseLengthErrors(t *testing.T) {
-	r := new(Nulterm)
+	r := new(NulTerm)
 	for n := 0; n < 6; n++ {
 		_, err := r.Parse(make([]byte, n))
 		require.Error(t, err)
@@ -20,19 +20,19 @@ func TestNultermMissingNul(t *testing.T) {
 		1, 2, 3, 4,
 		'n', 'o', 'n', 'u', 'l',
 	}
-	_, err := new(Nulterm).Parse(b)
+	_, err := new(NulTerm).Parse(b)
 	assert.Error(t, err)
 }
 
 func TestNultermStandard(t *testing.T) {
-	n := new(Nulterm)
+	n := new(NulTerm)
 	b := []byte{
 		1, 2, 3, 4,
 		'h', 'e', 'l', 'l', 'o', 0,
 		5,
 		'r', 'e', 's', 't',
 	}
-	expect := &Nulterm{
+	expect := &NulTerm{
 		X: 0x01020304,
 		S: "hello",
 		Y: 5,
