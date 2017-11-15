@@ -51,6 +51,7 @@ type Pragma struct {
 // Member is a field in a struct definition.
 type Member interface{}
 
+// Field is a data field in a struct.
 type Field struct {
 	Name string
 	Type Type

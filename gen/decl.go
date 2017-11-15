@@ -159,16 +159,16 @@ func tipe(t interface{}) string {
 	}
 }
 
-func integer(i ast.Integer) string {
-	switch i := i.(type) {
-	case *ast.IntegerConstRef:
-		return name(i.Name)
-	case *ast.IntegerLiteral:
-		return strconv.FormatInt(i.Value, 10)
-	default:
-		panic(unexpected(i))
-	}
-}
+// func integer(i ast.Integer) string {
+// 	switch i := i.(type) {
+// 	case *ast.IntegerConstRef:
+// 		return name(i.Name)
+// 	case *ast.IntegerLiteral:
+// 		return strconv.FormatInt(i.Value, 10)
+// 	default:
+// 		panic(unexpected(i))
+// 	}
+// }
 
 func unexpected(t interface{}) string {
 	return fmt.Sprintf("unexpected type %T", t)
