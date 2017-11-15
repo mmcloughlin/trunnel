@@ -130,11 +130,19 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 		}
 		g.printf("data = data[%d:]", n)
 
+	case *ast.CharType:
+		g.parseType(lhs, ast.U8)
+
 	case *ast.StructRef:
 		g.printf("var err error\n")
 		g.printf("%s = new(%s)\n", lhs, name(t.Name))
 		g.printf("data, err = %s.Parse(data)\n", lhs)
 		g.printf("if err != nil { return nil, err }\n")
+
+	case *ast.FixedArrayMember:
+		g.printf("for i := 0; i < %s; i++ {\n", integer(t.Size))
+		g.parseType(lhs+"[i]", t.Base)
+		g.printf("}\n")
 
 	default:
 		panic(unexpected(t))
@@ -155,21 +163,23 @@ func tipe(t interface{}) string {
 		return "byte"
 	case *ast.StructRef:
 		return "*" + name(t.Name)
+	case *ast.FixedArrayMember:
+		return fmt.Sprintf("[%s]%s", integer(t.Size), tipe(t.Base))
 	default:
 		panic(unexpected(t))
 	}
 }
 
-// func integer(i ast.Integer) string {
-// 	switch i := i.(type) {
-// 	case *ast.IntegerConstRef:
-// 		return name(i.Name)
-// 	case *ast.IntegerLiteral:
-// 		return strconv.FormatInt(i.Value, 10)
-// 	default:
-// 		panic(unexpected(i))
-// 	}
-// }
+func integer(i ast.Integer) string {
+	switch i := i.(type) {
+	case *ast.IntegerConstRef:
+		return name(i.Name)
+	case *ast.IntegerLiteral:
+		return strconv.FormatInt(i.Value, 10)
+	default:
+		panic(unexpected(i))
+	}
+}
 
 func unexpected(t interface{}) string {
 	return fmt.Sprintf("unexpected type %T", t)

@@ -1,0 +1,10 @@
+struct color { u8 r; u8 g; u8 b; }
+
+struct fixie_demo {
+   u8 bytes[8];
+   char letters[8];
+   u16 shortwords[4];
+   u32 words[2];
+   u64 big_words[2];
+   struct color colors[2];
+}
