@@ -1,7 +1,9 @@
 struct color { u8 r; u8 g; u8 b; }
 
+const NUM_BYTES = 8;
+
 struct fixie_demo {
-   u8 bytes[8];
+   u8 bytes[NUM_BYTES];
    char letters[8];
    u16 shortwords[4];
    u32 words[2];

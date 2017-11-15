@@ -7,6 +7,8 @@ import (
 	"errors"
 )
 
+const NumBytes = 8
+
 type Color struct {
 	R uint8
 	G uint8
@@ -39,7 +41,7 @@ func (c *Color) Parse(data []byte) ([]byte, error) {
 }
 
 type FixieDemo struct {
-	Bytes      [8]uint8
+	Bytes      [NumBytes]uint8
 	Letters    [8]byte
 	Shortwords [4]uint16
 	Words      [2]uint32
@@ -49,7 +51,7 @@ type FixieDemo struct {
 
 func (f *FixieDemo) Parse(data []byte) ([]byte, error) {
 	{
-		for i := 0; i < 8; i++ {
+		for i := 0; i < NumBytes; i++ {
 			if len(data) < 1 {
 				return nil, errors.New("data too short")
 			}
