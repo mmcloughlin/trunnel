@@ -74,6 +74,8 @@ func (g *generator) structMemberDecl(m ast.Member) {
 		g.printf("\t%s []%s\n", name(m.Name), tipe(m.Base))
 	case *ast.UnionMember:
 		g.structUnionMemberDecl(m)
+	case *ast.EOS:
+		// ignore
 	default:
 		panic(unexpected(m))
 	}
@@ -128,6 +130,9 @@ func (g *generator) parseMember(receiver string, m ast.Member) {
 		g.printf("%s = new(%s)\n", v, name(m.Ref.Name))
 		g.printf("data, err = %s.Parse(data)\n", v)
 		g.printf("if err != nil { return nil, err }\n")
+
+	case *ast.EOS:
+		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 
 	default:
 		// XXX panic(unexpected(m))
