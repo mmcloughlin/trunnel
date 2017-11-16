@@ -1,0 +1,21 @@
+const T_DATE = 2;
+const T_INTEGER = 3;
+const T_INTARRAY = 4;
+const T_VARARRAY = 5;
+const T_STRING = 6;
+
+struct date {
+    u16 year;
+    u8 month;
+    u8 day;
+};
+
+struct basic {
+   u8 tag IN [ T_DATE, T_INTEGER, T_INTARRAY, T_VARARRAY, T_STRING ];
+   union value[tag] {
+    T_DATE : struct date d;
+    T_INTEGER : u32 num;
+    T_INTARRAY : u8 eightbytes[8];
+    T_STRING : nulterm string;
+   };
+};

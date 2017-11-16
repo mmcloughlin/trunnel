@@ -107,6 +107,9 @@ func (g *generator) parseMember(m ast.Member) {
 		lhs := g.receiver + "." + name(m.Name)
 		g.parseType(lhs, m.Type)
 
+	case *ast.UnionMember:
+		g.parseUnionMember(m)
+
 	case *ast.EOS:
 		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 
@@ -190,6 +193,19 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 	default:
 		panic(unexpected(s))
 	}
+}
+
+func (g *generator) parseUnionMember(u *ast.UnionMember) {
+	// XXX unions with length
+	tag := g.ref(u.Tag)
+	g.printf("switch {\n")
+	for _, c := range u.Cases {
+		g.printf("case %s:\n", conditional(tag, c.Case))
+		for _, m := range c.Members {
+			g.parseMember(m)
+		}
+	}
+	g.printf("}\n")
 }
 
 // ref builds a variable reference that resolves to the given trunnel IDRef.
