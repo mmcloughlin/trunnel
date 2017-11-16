@@ -1,0 +1,12 @@
+struct union_cmds {
+    u8 tag;
+    union u[tag] {
+        1:
+            ignore;
+        2:
+            fail;
+        default:
+            u32 x[2];
+    };
+    u32 y;
+}

@@ -113,6 +113,12 @@ func (g *generator) parseMember(m ast.Member) {
 	case *ast.EOS:
 		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 
+	case *ast.Ignore:
+		// nothing to do
+
+	case *ast.Fail:
+		g.printf("return nil, errors.New(\"disallowed case\")")
+
 	default:
 		panic(unexpected(m))
 	}
@@ -200,7 +206,11 @@ func (g *generator) parseUnionMember(u *ast.UnionMember) {
 	tag := g.ref(u.Tag)
 	g.printf("switch {\n")
 	for _, c := range u.Cases {
-		g.printf("case %s:\n", conditional(tag, c.Case))
+		if c.Case == nil {
+			g.printf("default:\n")
+		} else {
+			g.printf("case %s:\n", conditional(tag, c.Case))
+		}
 		for _, m := range c.Members {
 			g.parseMember(m)
 		}
