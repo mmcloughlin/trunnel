@@ -13,24 +13,25 @@ type Fourbytes struct {
 }
 
 func (f *Fourbytes) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		f.X = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		f.X = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		f.Y = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		f.Y = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) > 0 {
+		if len(cur) > 0 {
 			return nil, errors.New("trailing data disallowed")
 		}
 	}
-	return data, nil
+	return cur, nil
 }

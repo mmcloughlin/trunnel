@@ -15,26 +15,27 @@ type NulTerm struct {
 }
 
 func (n *NulTerm) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 4 {
+		if len(cur) < 4 {
 			return nil, errors.New("data too short")
 		}
-		n.X = binary.BigEndian.Uint32(data)
-		data = data[4:]
+		n.X = binary.BigEndian.Uint32(cur)
+		cur = cur[4:]
 	}
 	{
-		i := bytes.IndexByte(data, 0)
+		i := bytes.IndexByte(cur, 0)
 		if i < 0 {
 			return nil, errors.New("could not parse nul-term string")
 		}
-		n.S, data = string(data[:i]), data[i+1:]
+		n.S, cur = string(cur[:i]), cur[i+1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		n.Y = data[0]
-		data = data[1:]
+		n.Y = cur[0]
+		cur = cur[1:]
 	}
-	return data, nil
+	return cur, nil
 }

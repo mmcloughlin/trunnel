@@ -14,12 +14,13 @@ type UnionCmds struct {
 }
 
 func (u *UnionCmds) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		u.Tag = data[0]
-		data = data[1:]
+		u.Tag = cur[0]
+		cur = cur[1:]
 	}
 	{
 		switch {
@@ -31,21 +32,21 @@ func (u *UnionCmds) Parse(data []byte) ([]byte, error) {
 		default:
 			{
 				for i := 0; i < 2; i++ {
-					if len(data) < 4 {
+					if len(cur) < 4 {
 						return nil, errors.New("data too short")
 					}
-					u.X[i] = binary.BigEndian.Uint32(data)
-					data = data[4:]
+					u.X[i] = binary.BigEndian.Uint32(cur)
+					cur = cur[4:]
 				}
 			}
 		}
 	}
 	{
-		if len(data) < 4 {
+		if len(cur) < 4 {
 			return nil, errors.New("data too short")
 		}
-		u.Y = binary.BigEndian.Uint32(data)
-		data = data[4:]
+		u.Y = binary.BigEndian.Uint32(cur)
+		cur = cur[4:]
 	}
-	return data, nil
+	return cur, nil
 }

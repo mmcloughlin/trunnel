@@ -15,33 +15,34 @@ type Ints struct {
 }
 
 func (i *Ints) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		i.Byte = data[0]
-		data = data[1:]
+		i.Byte = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		i.Word = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		i.Word = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) < 4 {
+		if len(cur) < 4 {
 			return nil, errors.New("data too short")
 		}
-		i.Dword = binary.BigEndian.Uint32(data)
-		data = data[4:]
+		i.Dword = binary.BigEndian.Uint32(cur)
+		cur = cur[4:]
 	}
 	{
-		if len(data) < 8 {
+		if len(cur) < 8 {
 			return nil, errors.New("data too short")
 		}
-		i.Qword = binary.BigEndian.Uint64(data)
-		data = data[8:]
+		i.Qword = binary.BigEndian.Uint64(cur)
+		cur = cur[8:]
 	}
-	return data, nil
+	return cur, nil
 }

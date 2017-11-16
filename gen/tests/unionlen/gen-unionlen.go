@@ -21,99 +21,100 @@ type UnionWithLen struct {
 }
 
 func (u *UnionWithLen) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		u.Tag = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		u.Tag = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		u.UnionLen = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		u.UnionLen = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) < int(u.UnionLen) {
+		if len(cur) < int(u.UnionLen) {
 			return nil, errors.New("data too short")
 		}
-		restore := data[int(u.UnionLen):]
-		data = data[:int(u.UnionLen)]
+		restore := cur[int(u.UnionLen):]
+		cur = cur[:int(u.UnionLen)]
 		switch {
 		case u.Tag == 1:
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.R = data[0]
-				data = data[1:]
+				u.R = cur[0]
+				cur = cur[1:]
 			}
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.G = data[0]
-				data = data[1:]
+				u.G = cur[0]
+				cur = cur[1:]
 			}
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.B = data[0]
-				data = data[1:]
+				u.B = cur[0]
+				cur = cur[1:]
 			}
 		case u.Tag == 2:
 			{
-				if len(data) < 2 {
+				if len(cur) < 2 {
 					return nil, errors.New("data too short")
 				}
-				u.Year = binary.BigEndian.Uint16(data)
-				data = data[2:]
+				u.Year = binary.BigEndian.Uint16(cur)
+				cur = cur[2:]
 			}
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.Month = data[0]
-				data = data[1:]
+				u.Month = cur[0]
+				cur = cur[1:]
 			}
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.Day = data[0]
-				data = data[1:]
+				u.Day = cur[0]
+				cur = cur[1:]
 			}
 			{
-				data = []byte{}
+				cur = []byte{}
 			}
 		default:
 			{
 				u.Unparseable = make([]uint8, 0)
-				for len(data) > 0 {
+				for len(cur) > 0 {
 					var t uint8
-					if len(data) < 1 {
+					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					t = data[0]
-					data = data[1:]
+					t = cur[0]
+					cur = cur[1:]
 					u.Unparseable = append(u.Unparseable, t)
 				}
 			}
 		}
-		if len(data) > 0 {
+		if len(cur) > 0 {
 			return nil, errors.New("trailing data disallowed")
 		}
-		data = restore
+		cur = restore
 	}
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		u.RightAfterTheUnion = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		u.RightAfterTheUnion = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
-	return data, nil
+	return cur, nil
 }

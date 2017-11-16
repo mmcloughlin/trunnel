@@ -13,22 +13,23 @@ type VarArray struct {
 }
 
 func (v *VarArray) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		v.NWords = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		v.NWords = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
 		v.Words = make([]uint32, int(v.NWords))
 		for i := 0; i < int(v.NWords); i++ {
-			if len(data) < 4 {
+			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			v.Words[i] = binary.BigEndian.Uint32(data)
-			data = data[4:]
+			v.Words[i] = binary.BigEndian.Uint32(cur)
+			cur = cur[4:]
 		}
 	}
-	return data, nil
+	return cur, nil
 }

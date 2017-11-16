@@ -10,21 +10,22 @@ type Point struct {
 }
 
 func (p *Point) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		p.X = data[0]
-		data = data[1:]
+		p.X = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		p.Y = data[0]
-		data = data[1:]
+		p.Y = cur[0]
+		cur = cur[1:]
 	}
-	return data, nil
+	return cur, nil
 }
 
 type Rect struct {
@@ -33,10 +34,11 @@ type Rect struct {
 }
 
 func (r *Rect) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
 		var err error
 		r.NorthEast = new(Point)
-		data, err = r.NorthEast.Parse(data)
+		cur, err = r.NorthEast.Parse(cur)
 		if err != nil {
 			return nil, err
 		}
@@ -44,10 +46,10 @@ func (r *Rect) Parse(data []byte) ([]byte, error) {
 	{
 		var err error
 		r.SouthWest = new(Point)
-		data, err = r.SouthWest.Parse(data)
+		cur, err = r.SouthWest.Parse(cur)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return data, nil
+	return cur, nil
 }

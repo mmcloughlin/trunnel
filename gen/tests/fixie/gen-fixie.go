@@ -16,28 +16,29 @@ type Color struct {
 }
 
 func (c *Color) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.R = data[0]
-		data = data[1:]
+		c.R = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.G = data[0]
-		data = data[1:]
+		c.G = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.B = data[0]
-		data = data[1:]
+		c.B = cur[0]
+		cur = cur[1:]
 	}
-	return data, nil
+	return cur, nil
 }
 
 type FixieDemo struct {
@@ -50,60 +51,61 @@ type FixieDemo struct {
 }
 
 func (f *FixieDemo) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
 		for i := 0; i < NumBytes; i++ {
-			if len(data) < 1 {
+			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			f.Bytes[i] = data[0]
-			data = data[1:]
+			f.Bytes[i] = cur[0]
+			cur = cur[1:]
 		}
 	}
 	{
 		for i := 0; i < 8; i++ {
-			if len(data) < 1 {
+			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			f.Letters[i] = data[0]
-			data = data[1:]
+			f.Letters[i] = cur[0]
+			cur = cur[1:]
 		}
 	}
 	{
 		for i := 0; i < 4; i++ {
-			if len(data) < 2 {
+			if len(cur) < 2 {
 				return nil, errors.New("data too short")
 			}
-			f.Shortwords[i] = binary.BigEndian.Uint16(data)
-			data = data[2:]
+			f.Shortwords[i] = binary.BigEndian.Uint16(cur)
+			cur = cur[2:]
 		}
 	}
 	{
 		for i := 0; i < 2; i++ {
-			if len(data) < 4 {
+			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			f.Words[i] = binary.BigEndian.Uint32(data)
-			data = data[4:]
+			f.Words[i] = binary.BigEndian.Uint32(cur)
+			cur = cur[4:]
 		}
 	}
 	{
 		for i := 0; i < 2; i++ {
-			if len(data) < 8 {
+			if len(cur) < 8 {
 				return nil, errors.New("data too short")
 			}
-			f.BigWords[i] = binary.BigEndian.Uint64(data)
-			data = data[8:]
+			f.BigWords[i] = binary.BigEndian.Uint64(cur)
+			cur = cur[8:]
 		}
 	}
 	{
 		for i := 0; i < 2; i++ {
 			var err error
 			f.Colors[i] = new(Color)
-			data, err = f.Colors[i].Parse(data)
+			cur, err = f.Colors[i].Parse(cur)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
-	return data, nil
+	return cur, nil
 }

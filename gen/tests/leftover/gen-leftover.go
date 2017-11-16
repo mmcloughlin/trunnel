@@ -14,44 +14,45 @@ type Leftover struct {
 }
 
 func (l *Leftover) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
 		for i := 0; i < 2; i++ {
-			if len(data) < 4 {
+			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			l.Head[i] = binary.BigEndian.Uint32(data)
-			data = data[4:]
+			l.Head[i] = binary.BigEndian.Uint32(cur)
+			cur = cur[4:]
 		}
 	}
 	{
-		if len(data) < 8 {
+		if len(cur) < 8 {
 			return nil, errors.New("data too short")
 		}
-		restore := data[len(data)-8:]
-		data = data[:len(data)-8]
+		restore := cur[len(cur)-8:]
+		cur = cur[:len(cur)-8]
 		l.Mid = make([]uint32, 0)
-		for len(data) > 0 {
+		for len(cur) > 0 {
 			var t uint32
-			if len(data) < 4 {
+			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			t = binary.BigEndian.Uint32(data)
-			data = data[4:]
+			t = binary.BigEndian.Uint32(cur)
+			cur = cur[4:]
 			l.Mid = append(l.Mid, t)
 		}
-		if len(data) > 0 {
+		if len(cur) > 0 {
 			return nil, errors.New("trailing data disallowed")
 		}
-		data = restore
+		cur = restore
 	}
 	{
 		for i := 0; i < 2; i++ {
-			if len(data) < 4 {
+			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			l.Tail[i] = binary.BigEndian.Uint32(data)
-			data = data[4:]
+			l.Tail[i] = binary.BigEndian.Uint32(cur)
+			cur = cur[4:]
 		}
 	}
-	return data, nil
+	return cur, nil
 }

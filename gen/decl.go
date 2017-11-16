@@ -28,6 +28,7 @@ type generator struct {
 	w   io.Writer
 
 	receiver string // method receiver variable
+	data     string // data variable
 }
 
 func (g *generator) printf(format string, a ...interface{}) {
@@ -93,11 +94,14 @@ func (g *generator) structUnionMemberDecl(m *ast.UnionMember) {
 func (g *generator) parse(s *ast.Struct) {
 	g.receiver = strings.ToLower(s.Name[:1])
 	g.printf("func (%s *%s) Parse(data []byte) ([]byte, error) {\n", g.receiver, name(s.Name))
+	g.printf("cur := data\n")
+	g.data = "cur"
 	for _, m := range s.Members {
 		g.parseMember(m)
 	}
-	g.printf("return data, nil\n}\n\n")
+	g.printf("return %s, nil\n}\n\n", g.data)
 	g.receiver = ""
+	g.data = ""
 }
 
 func (g *generator) parseMember(m ast.Member) {
@@ -114,7 +118,7 @@ func (g *generator) parseMember(m ast.Member) {
 		g.assertEnd()
 
 	case *ast.Ignore:
-		g.printf("data = []byte{}\n")
+		g.printf("%s = []byte{}\n", g.data)
 
 	case *ast.Fail:
 		g.printf("return nil, errors.New(\"disallowed case\")")
@@ -128,32 +132,35 @@ func (g *generator) parseMember(m ast.Member) {
 func (g *generator) parseType(lhs string, t ast.Type) {
 	switch t := t.(type) {
 	case *ast.NulTermString:
-		g.printf("i := bytes.IndexByte(data, 0)\n")
+		g.printf("i := bytes.IndexByte(%s, 0)\n", g.data)
 		g.printf("if i < 0 { return nil, errors.New(\"could not parse nul-term string\") }\n")
-		g.printf("%s, data = string(data[:i]), data[i+1:]\n", lhs)
+		g.printf("%s, %s = string(%s[:i]), %s[i+1:]\n", lhs, g.data, g.data, g.data)
 
 	case *ast.IntType:
 		n := t.Size / 8
 		g.lengthCheck(strconv.Itoa(n))
 		if n == 1 {
-			g.printf("%s = data[0]\n", lhs)
+			g.printf("%s = %s[0]\n", lhs, g.data)
 		} else {
-			g.printf("%s = binary.BigEndian.Uint%d(data)\n", lhs, t.Size)
+			g.printf("%s = binary.BigEndian.Uint%d(%s)\n", lhs, t.Size, g.data)
 		}
 		if t.Constraint != nil {
 			g.printf("if !(%s) {\n", conditional(lhs, t.Constraint))
 			g.printf("return nil, errors.New(\"integer constraint violated\")\n")
 			g.printf("}\n")
 		}
-		g.printf("data = data[%d:]\n", n)
+		g.printf("%s = %s[%d:]\n", g.data, g.data, n)
 
 	case *ast.CharType:
 		g.parseType(lhs, ast.U8)
 
+	case *ast.Ptr:
+		g.printf("%s = len(data) - len(%s)\n", lhs, g.data)
+
 	case *ast.StructRef:
 		g.printf("var err error\n")
 		g.printf("%s = new(%s)\n", lhs, name(t.Name))
-		g.printf("data, err = %s.Parse(data)\n", lhs)
+		g.printf("%s, err = %s.Parse(%s)\n", g.data, lhs, g.data)
 		g.printf("if err != nil { return nil, err }\n")
 
 	case *ast.FixedArrayMember:
@@ -188,7 +195,7 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 
 	case nil:
 		g.printf("%s = make([]%s, 0)\n", lhs, tipe(base))
-		g.printf("for len(data) > 0 {\n")
+		g.printf("for len(%s) > 0 {\n", g.data)
 		g.printf("var t %s\n", tipe(base))
 		g.parseType("t", base)
 		g.printf("%s = append(%s, t)\n", lhs, lhs)
@@ -232,7 +239,7 @@ func (g *generator) constrained(c ast.LengthConstraint, f func()) {
 	switch c := c.(type) {
 	case *ast.Leftover:
 		g.lengthCheck(integer(c.Num))
-		n = fmt.Sprintf("len(data)-%s", integer(c.Num))
+		n = fmt.Sprintf("len(%s)-%s", g.data, integer(c.Num))
 
 	case *ast.IDRef:
 		n = fmt.Sprintf("int(%s)", g.ref(c))
@@ -242,11 +249,11 @@ func (g *generator) constrained(c ast.LengthConstraint, f func()) {
 		panic(unexpected(c))
 	}
 
-	g.printf("restore := data[%s:]\n", n)
-	g.printf("data = data[:%s]\n", n)
+	g.printf("restore := %s[%s:]\n", g.data, n)
+	g.printf("%s = %s[:%s]\n", g.data, g.data, n)
 	f()
 	g.assertEnd()
-	g.printf("data = restore\n")
+	g.printf("%s = restore\n", g.data)
 }
 
 // ref builds a variable reference that resolves to the given trunnel IDRef.
@@ -258,11 +265,11 @@ func (g *generator) ref(r *ast.IDRef) string {
 }
 
 func (g *generator) lengthCheck(min string) {
-	g.printf("if len(data) < %s { return nil, errors.New(\"data too short\") }\n", min)
+	g.printf("if len(%s) < %s { return nil, errors.New(\"data too short\") }\n", g.data, min)
 }
 
 func (g *generator) assertEnd() {
-	g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
+	g.printf("if len(%s) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n", g.data)
 }
 
 func conditional(v string, c *ast.IntegerList) string {
@@ -286,6 +293,8 @@ func tipe(t interface{}) string {
 		return "uint" + strconv.Itoa(t.Size)
 	case *ast.CharType:
 		return "byte"
+	case *ast.Ptr:
+		return "int"
 	case *ast.StructRef:
 		return "*" + name(t.Name)
 	case *ast.FixedArrayMember:

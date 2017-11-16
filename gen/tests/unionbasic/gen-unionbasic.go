@@ -25,28 +25,29 @@ type Date struct {
 }
 
 func (d *Date) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 2 {
+		if len(cur) < 2 {
 			return nil, errors.New("data too short")
 		}
-		d.Year = binary.BigEndian.Uint16(data)
-		data = data[2:]
+		d.Year = binary.BigEndian.Uint16(cur)
+		cur = cur[2:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		d.Month = data[0]
-		data = data[1:]
+		d.Month = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		d.Day = data[0]
-		data = data[1:]
+		d.Day = cur[0]
+		cur = cur[1:]
 	}
-	return data, nil
+	return cur, nil
 }
 
 type Basic struct {
@@ -58,15 +59,16 @@ type Basic struct {
 }
 
 func (b *Basic) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		b.Tag = data[0]
+		b.Tag = cur[0]
 		if !(b.Tag == TDate || b.Tag == TInteger || b.Tag == TIntarray || b.Tag == TVararray || b.Tag == TString) {
 			return nil, errors.New("integer constraint violated")
 		}
-		data = data[1:]
+		cur = cur[1:]
 	}
 	{
 		switch {
@@ -74,38 +76,38 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 			{
 				var err error
 				b.D = new(Date)
-				data, err = b.D.Parse(data)
+				cur, err = b.D.Parse(cur)
 				if err != nil {
 					return nil, err
 				}
 			}
 		case b.Tag == TInteger:
 			{
-				if len(data) < 4 {
+				if len(cur) < 4 {
 					return nil, errors.New("data too short")
 				}
-				b.Num = binary.BigEndian.Uint32(data)
-				data = data[4:]
+				b.Num = binary.BigEndian.Uint32(cur)
+				cur = cur[4:]
 			}
 		case b.Tag == TIntarray:
 			{
 				for i := 0; i < 8; i++ {
-					if len(data) < 1 {
+					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					b.Eightbytes[i] = data[0]
-					data = data[1:]
+					b.Eightbytes[i] = cur[0]
+					cur = cur[1:]
 				}
 			}
 		case b.Tag == TString:
 			{
-				i := bytes.IndexByte(data, 0)
+				i := bytes.IndexByte(cur, 0)
 				if i < 0 {
 					return nil, errors.New("could not parse nul-term string")
 				}
-				b.String, data = string(data[:i]), data[i+1:]
+				b.String, cur = string(cur[:i]), cur[i+1:]
 			}
 		}
 	}
-	return data, nil
+	return cur, nil
 }

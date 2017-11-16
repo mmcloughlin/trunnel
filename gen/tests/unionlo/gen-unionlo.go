@@ -18,83 +18,84 @@ type Unlo struct {
 }
 
 func (u *Unlo) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		u.Tag = data[0]
-		data = data[1:]
+		u.Tag = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 8 {
+		if len(cur) < 8 {
 			return nil, errors.New("data too short")
 		}
-		restore := data[len(data)-8:]
-		data = data[:len(data)-8]
+		restore := cur[len(cur)-8:]
+		cur = cur[:len(cur)-8]
 		switch {
 		case u.Tag == 1:
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.X = data[0]
-				data = data[1:]
+				u.X = cur[0]
+				cur = cur[1:]
 			}
 		case u.Tag == 2:
 			{
 				u.Y = make([]uint8, 0)
-				for len(data) > 0 {
+				for len(cur) > 0 {
 					var t uint8
-					if len(data) < 1 {
+					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					t = data[0]
-					data = data[1:]
+					t = cur[0]
+					cur = cur[1:]
 					u.Y = append(u.Y, t)
 				}
 			}
 		case u.Tag == 4:
 			{
-				if len(data) < 1 {
+				if len(cur) < 1 {
 					return nil, errors.New("data too short")
 				}
-				u.Byte = data[0]
-				data = data[1:]
+				u.Byte = cur[0]
+				cur = cur[1:]
 			}
 			{
 				u.Z = make([]uint16, 0)
-				for len(data) > 0 {
+				for len(cur) > 0 {
 					var t uint16
-					if len(data) < 2 {
+					if len(cur) < 2 {
 						return nil, errors.New("data too short")
 					}
-					t = binary.BigEndian.Uint16(data)
-					data = data[2:]
+					t = binary.BigEndian.Uint16(cur)
+					cur = cur[2:]
 					u.Z = append(u.Z, t)
 				}
 			}
 		}
-		if len(data) > 0 {
+		if len(cur) > 0 {
 			return nil, errors.New("trailing data disallowed")
 		}
-		data = restore
+		cur = restore
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		u.Leftoverlen = data[0]
-		data = data[1:]
+		u.Leftoverlen = cur[0]
+		cur = cur[1:]
 	}
 	{
 		u.Leftovers = make([]uint8, int(u.Leftoverlen))
 		for i := 0; i < int(u.Leftoverlen); i++ {
-			if len(data) < 1 {
+			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			u.Leftovers[i] = data[0]
-			data = data[1:]
+			u.Leftovers[i] = cur[0]
+			cur = cur[1:]
 		}
 	}
-	return data, nil
+	return cur, nil
 }

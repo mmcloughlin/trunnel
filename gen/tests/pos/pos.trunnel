@@ -1,0 +1,8 @@
+struct haspos {
+    nulterm s1;
+    /** Position right after the first NUL. */
+    @ptr pos1;
+    nulterm s2;
+    @ptr pos2;
+    u32 x;
+}

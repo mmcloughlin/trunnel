@@ -11,26 +11,27 @@ type Color struct {
 }
 
 func (c *Color) Parse(data []byte) ([]byte, error) {
+	cur := data
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.R = data[0]
-		data = data[1:]
+		c.R = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.G = data[0]
-		data = data[1:]
+		c.G = cur[0]
+		cur = cur[1:]
 	}
 	{
-		if len(data) < 1 {
+		if len(cur) < 1 {
 			return nil, errors.New("data too short")
 		}
-		c.B = data[0]
-		data = data[1:]
+		c.B = cur[0]
+		cur = cur[1:]
 	}
-	return data, nil
+	return cur, nil
 }
