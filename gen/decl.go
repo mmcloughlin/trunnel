@@ -111,10 +111,10 @@ func (g *generator) parseMember(m ast.Member) {
 		g.parseUnionMember(m)
 
 	case *ast.EOS:
-		g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
+		g.assertEnd()
 
 	case *ast.Ignore:
-		// nothing to do
+		g.printf("data = []byte{}\n")
 
 	case *ast.Fail:
 		g.printf("return nil, errors.New(\"disallowed case\")")
@@ -182,11 +182,9 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 		g.printf("}\n")
 
 	case *ast.Leftover:
-		g.lengthCheck(integer(s.Num))
-		g.printf("restore := data[len(data)-%s:]\n", integer(s.Num))
-		g.printf("data = data[:len(data)-%s]\n", integer(s.Num))
-		g.parseArray(lhs, base, nil)
-		g.printf("data = restore\n")
+		g.constrained(s, func() {
+			g.parseArray(lhs, base, nil)
+		})
 
 	case nil:
 		g.printf("%s = make([]%s, 0)\n", lhs, tipe(base))
@@ -202,7 +200,17 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 }
 
 func (g *generator) parseUnionMember(u *ast.UnionMember) {
-	// XXX unions with length
+	if u.Length != nil {
+		g.constrained(u.Length, func() {
+			g.parseUnionMember(&ast.UnionMember{
+				Name:  u.Name,
+				Tag:   u.Tag,
+				Cases: u.Cases,
+			})
+		})
+		return
+	}
+
 	tag := g.ref(u.Tag)
 	g.printf("switch {\n")
 	for _, c := range u.Cases {
@@ -218,6 +226,29 @@ func (g *generator) parseUnionMember(u *ast.UnionMember) {
 	g.printf("}\n")
 }
 
+func (g *generator) constrained(c ast.LengthConstraint, f func()) {
+	var n string
+
+	switch c := c.(type) {
+	case *ast.Leftover:
+		g.lengthCheck(integer(c.Num))
+		n = fmt.Sprintf("len(data)-%s", integer(c.Num))
+
+	case *ast.IDRef:
+		n = fmt.Sprintf("int(%s)", g.ref(c))
+		g.lengthCheck(n)
+
+	default:
+		panic(unexpected(c))
+	}
+
+	g.printf("restore := data[%s:]\n", n)
+	g.printf("data = data[:%s]\n", n)
+	f()
+	g.assertEnd()
+	g.printf("data = restore\n")
+}
+
 // ref builds a variable reference that resolves to the given trunnel IDRef.
 func (g *generator) ref(r *ast.IDRef) string {
 	if r.Scope == "" {
@@ -228,6 +259,10 @@ func (g *generator) ref(r *ast.IDRef) string {
 
 func (g *generator) lengthCheck(min string) {
 	g.printf("if len(data) < %s { return nil, errors.New(\"data too short\") }\n", min)
+}
+
+func (g *generator) assertEnd() {
+	g.printf("if len(data) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n")
 }
 
 func conditional(v string, c *ast.IntegerList) string {

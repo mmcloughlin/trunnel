@@ -24,8 +24,6 @@ func (u *UnionCmds) Parse(data []byte) ([]byte, error) {
 	{
 		switch {
 		case u.Tag == 1:
-			{
-			}
 		case u.Tag == 2:
 			{
 				return nil, errors.New("disallowed case")

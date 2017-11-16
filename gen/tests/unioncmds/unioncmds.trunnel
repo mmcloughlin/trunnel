@@ -2,7 +2,7 @@ struct union_cmds {
     u8 tag;
     union u[tag] {
         1:
-            ignore;
+            ; // empty case
         2:
             fail;
         default:

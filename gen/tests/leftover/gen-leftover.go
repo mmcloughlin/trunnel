@@ -39,6 +39,9 @@ func (l *Leftover) Parse(data []byte) ([]byte, error) {
 			data = data[4:]
 			l.Mid = append(l.Mid, t)
 		}
+		if len(data) > 0 {
+			return nil, errors.New("trailing data disallowed")
+		}
 		data = restore
 	}
 	{
