@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/mmcloughlin/trunnel/parse"
-	"github.com/mmcloughlin/trunnel/test"
 	"github.com/stretchr/testify/require"
 )
 

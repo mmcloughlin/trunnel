@@ -3,7 +3,7 @@ package parse
 import (
 	"testing"
 
-	"github.com/mmcloughlin/trunnel/test"
+	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/stretchr/testify/assert"
 )
 
