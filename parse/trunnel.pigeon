@@ -37,8 +37,6 @@ File <- _ ds:Declaration* _ EOF {
         f.Contexts = append(f.Contexts, d)
       case *ast.Struct:
         f.Structs = append(f.Structs, d)
-      case *ast.ExternStruct:
-        f.Extern = append(f.Extern, d)
       case *ast.Pragma:
         f.Pragmas = append(f.Pragmas, d)
       default:
@@ -125,7 +123,7 @@ StructIdentifier <- "struct" __ n:Identifier {
 }
 
 ExternDeclaration <- "extern" __ n:StructIdentifier ctx:(__ ContextRefs)?_ ';' {
-  e := &ast.ExternStruct{
+  e := &ast.Struct{
     Name: n.(string),
   }
   if ctx != nil {

@@ -6,7 +6,6 @@ type File struct {
 	Constants []*Constant
 	Contexts  []*Context
 	Structs   []*Struct
-	Extern    []*ExternStruct
 	Pragmas   []*Pragma
 }
 
@@ -29,14 +28,11 @@ type Context struct {
 type Struct struct {
 	Name     string
 	Contexts []string
-	Members  []Member
+	Members  []Member // nil for extern struct
 }
 
-// ExternStruct is a declaration that a Trunnel structure is available
-// elsewhere.
-type ExternStruct struct {
-	Name     string
-	Contexts []string
+func (s Struct) Extern() bool {
+	return s.Members == nil
 }
 
 // Pragma represents a directive to trunnel.

@@ -76,8 +76,8 @@ func TestStructBasic(t *testing.T) {
 func TestExtern(t *testing.T) {
 	src := "extern struct rgb;"
 	expect := &ast.File{
-		Extern: []*ast.ExternStruct{
-			&ast.ExternStruct{Name: "rgb"},
+		Structs: []*ast.Struct{
+			&ast.Struct{Name: "rgb"},
 		},
 	}
 	f, err := String(src)
@@ -88,8 +88,8 @@ func TestExtern(t *testing.T) {
 func TestExternContexts(t *testing.T) {
 	src := "extern struct rgb with context a,b,c;"
 	expect := &ast.File{
-		Extern: []*ast.ExternStruct{
-			&ast.ExternStruct{
+		Structs: []*ast.Struct{
+			&ast.Struct{
 				Name:     "rgb",
 				Contexts: []string{"a", "b", "c"},
 			},
