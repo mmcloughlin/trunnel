@@ -31,6 +31,7 @@ type Struct struct {
 	Members  []Member // nil for extern struct
 }
 
+// Extern returns whether the struct declaration is external.
 func (s Struct) Extern() bool {
 	return s.Members == nil
 }
