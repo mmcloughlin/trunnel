@@ -29,7 +29,9 @@ func Build(src []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(dir)
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
 
 	srcfile := filepath.Join(dir, "src.go")
 	if err := ioutil.WriteFile(srcfile, src, 0600); err != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 
 	"github.com/mmcloughlin/trunnel/gen"
@@ -18,11 +19,13 @@ func main() {
 		build,
 	}
 
-	app.Run(os.Args)
+	_ = app.Run(os.Args)
 }
 
 // build command
 var (
+	out io.Writer = os.Stdout
+
 	build = cli.Command{
 		Name:      "build",
 		Usage:     "generate go code from trunnel",
@@ -43,7 +46,9 @@ var (
 				return cli.NewExitError(err, 1)
 			}
 
-			os.Stdout.Write(src)
+			if _, err := out.Write(src); err != nil {
+				return cli.NewExitError(err, 1)
+			}
 
 			return nil
 		},

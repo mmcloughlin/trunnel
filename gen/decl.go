@@ -19,7 +19,9 @@ func File(pkg string, f *ast.File) ([]byte, error) {
 		pkg: pkg,
 		w:   buf,
 	}
-	g.file(f)
+	if err := g.file(f); err != nil {
+		return nil, err
+	}
 	return imports.Process("", buf.Bytes(), nil)
 }
 
