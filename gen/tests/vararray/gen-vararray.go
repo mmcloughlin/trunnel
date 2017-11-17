@@ -23,11 +23,11 @@ func (v *VarArray) Parse(data []byte) ([]byte, error) {
 	}
 	{
 		v.Words = make([]uint32, int(v.NWords))
-		for i := 0; i < int(v.NWords); i++ {
+		for idx := 0; idx < int(v.NWords); idx++ {
 			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			v.Words[i] = binary.BigEndian.Uint32(cur)
+			v.Words[idx] = binary.BigEndian.Uint32(cur)
 			cur = cur[4:]
 		}
 	}

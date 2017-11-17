@@ -1,40 +1,34 @@
 package parse
 
 import (
-	"path/filepath"
 	"testing"
 
+	"github.com/mmcloughlin/trunnel/test"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func GlobTest(t *testing.T, pattern string, valid bool) {
-	filenames, err := filepath.Glob(pattern)
-	require.NoError(t, err)
-	for _, filename := range filenames {
-		t.Run(filename, func(t *testing.T) {
-			_, err := File(filename)
-			if valid {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-			}
-		})
-	}
-}
-
 func TestValidFiles(t *testing.T) {
-	GlobTest(t, "./testdata/valid/*.trunnel", true)
+	test.Glob(t, "./testdata/valid/*.trunnel", valid)
 }
 
 func TestFailingFiles(t *testing.T) {
-	GlobTest(t, "./testdata/failing/*.trunnel", false)
+	test.Glob(t, "./testdata/failing/*.trunnel", invalid)
 }
 
 func TestTorFiles(t *testing.T) {
-	GlobTest(t, "../testdata/tor/*.trunnel", true)
+	test.Glob(t, "../testdata/tor/*.trunnel", valid)
 }
 
 func TestTrunnelFiles(t *testing.T) {
-	GlobTest(t, "../testdata/trunnel/*.trunnel", true)
+	test.Glob(t, "../testdata/trunnel/*.trunnel", valid)
+}
+
+func valid(t *testing.T, filename string) {
+	_, err := File(filename)
+	assert.NoError(t, err)
+}
+
+func invalid(t *testing.T, filename string) {
+	_, err := File(filename)
+	assert.Error(t, err)
 }

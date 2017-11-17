@@ -16,11 +16,11 @@ type Leftover struct {
 func (l *Leftover) Parse(data []byte) ([]byte, error) {
 	cur := data
 	{
-		for i := 0; i < 2; i++ {
+		for idx := 0; idx < 2; idx++ {
 			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			l.Head[i] = binary.BigEndian.Uint32(cur)
+			l.Head[idx] = binary.BigEndian.Uint32(cur)
 			cur = cur[4:]
 		}
 	}
@@ -32,13 +32,13 @@ func (l *Leftover) Parse(data []byte) ([]byte, error) {
 		cur = cur[:len(cur)-8]
 		l.Mid = make([]uint32, 0)
 		for len(cur) > 0 {
-			var t uint32
+			var tmp uint32
 			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			t = binary.BigEndian.Uint32(cur)
+			tmp = binary.BigEndian.Uint32(cur)
 			cur = cur[4:]
-			l.Mid = append(l.Mid, t)
+			l.Mid = append(l.Mid, tmp)
 		}
 		if len(cur) > 0 {
 			return nil, errors.New("trailing data disallowed")
@@ -46,11 +46,11 @@ func (l *Leftover) Parse(data []byte) ([]byte, error) {
 		cur = restore
 	}
 	{
-		for i := 0; i < 2; i++ {
+		for idx := 0; idx < 2; idx++ {
 			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			l.Tail[i] = binary.BigEndian.Uint32(cur)
+			l.Tail[idx] = binary.BigEndian.Uint32(cur)
 			cur = cur[4:]
 		}
 	}

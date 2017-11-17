@@ -31,11 +31,11 @@ func (u *UnionCmds) Parse(data []byte) ([]byte, error) {
 			}
 		default:
 			{
-				for i := 0; i < 2; i++ {
+				for idx := 0; idx < 2; idx++ {
 					if len(cur) < 4 {
 						return nil, errors.New("data too short")
 					}
-					u.X[i] = binary.BigEndian.Uint32(cur)
+					u.X[idx] = binary.BigEndian.Uint32(cur)
 					cur = cur[4:]
 				}
 			}

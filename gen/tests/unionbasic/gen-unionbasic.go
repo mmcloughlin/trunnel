@@ -91,11 +91,11 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 			}
 		case b.Tag == TIntarray:
 			{
-				for i := 0; i < 8; i++ {
+				for idx := 0; idx < 8; idx++ {
 					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					b.Eightbytes[i] = cur[0]
+					b.Eightbytes[idx] = cur[0]
 					cur = cur[1:]
 				}
 			}

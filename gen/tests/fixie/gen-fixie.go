@@ -53,55 +53,55 @@ type FixieDemo struct {
 func (f *FixieDemo) Parse(data []byte) ([]byte, error) {
 	cur := data
 	{
-		for i := 0; i < NumBytes; i++ {
+		for idx := 0; idx < NumBytes; idx++ {
 			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			f.Bytes[i] = cur[0]
+			f.Bytes[idx] = cur[0]
 			cur = cur[1:]
 		}
 	}
 	{
-		for i := 0; i < 8; i++ {
+		for idx := 0; idx < 8; idx++ {
 			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			f.Letters[i] = cur[0]
+			f.Letters[idx] = cur[0]
 			cur = cur[1:]
 		}
 	}
 	{
-		for i := 0; i < 4; i++ {
+		for idx := 0; idx < 4; idx++ {
 			if len(cur) < 2 {
 				return nil, errors.New("data too short")
 			}
-			f.Shortwords[i] = binary.BigEndian.Uint16(cur)
+			f.Shortwords[idx] = binary.BigEndian.Uint16(cur)
 			cur = cur[2:]
 		}
 	}
 	{
-		for i := 0; i < 2; i++ {
+		for idx := 0; idx < 2; idx++ {
 			if len(cur) < 4 {
 				return nil, errors.New("data too short")
 			}
-			f.Words[i] = binary.BigEndian.Uint32(cur)
+			f.Words[idx] = binary.BigEndian.Uint32(cur)
 			cur = cur[4:]
 		}
 	}
 	{
-		for i := 0; i < 2; i++ {
+		for idx := 0; idx < 2; idx++ {
 			if len(cur) < 8 {
 				return nil, errors.New("data too short")
 			}
-			f.BigWords[i] = binary.BigEndian.Uint64(cur)
+			f.BigWords[idx] = binary.BigEndian.Uint64(cur)
 			cur = cur[8:]
 		}
 	}
 	{
-		for i := 0; i < 2; i++ {
+		for idx := 0; idx < 2; idx++ {
 			var err error
-			f.Colors[i] = new(Color)
-			cur, err = f.Colors[i].Parse(cur)
+			f.Colors[idx] = new(Color)
+			cur, err = f.Colors[idx].Parse(cur)
 			if err != nil {
 				return nil, err
 			}

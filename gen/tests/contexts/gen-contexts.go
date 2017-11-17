@@ -91,11 +91,11 @@ func (v *Varsize) Parse(data []byte, count Count) ([]byte, error) {
 	}
 	{
 		v.Msg = make([]uint8, int(count.Countval))
-		for i := 0; i < int(count.Countval); i++ {
+		for idx := 0; idx < int(count.Countval); idx++ {
 			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			v.Msg[i] = cur[0]
+			v.Msg[idx] = cur[0]
 			cur = cur[1:]
 		}
 	}
@@ -147,26 +147,26 @@ func (c *Ccomplex) Parse(data []byte, flag Flag, count Count) ([]byte, error) {
 			{
 				c.A = make([]uint8, 0)
 				for len(cur) > 0 {
-					var t uint8
+					var tmp uint8
 					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					t = cur[0]
+					tmp = cur[0]
 					cur = cur[1:]
-					c.A = append(c.A, t)
+					c.A = append(c.A, tmp)
 				}
 			}
 		case flag.Flagval == 1:
 			{
 				c.B = make([]uint16, 0)
 				for len(cur) > 0 {
-					var t uint16
+					var tmp uint16
 					if len(cur) < 2 {
 						return nil, errors.New("data too short")
 					}
-					t = binary.BigEndian.Uint16(cur)
+					tmp = binary.BigEndian.Uint16(cur)
 					cur = cur[2:]
-					c.B = append(c.B, t)
+					c.B = append(c.B, tmp)
 				}
 			}
 		}

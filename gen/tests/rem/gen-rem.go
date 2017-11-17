@@ -24,13 +24,13 @@ func (r *Rem) Parse(data []byte) ([]byte, error) {
 	{
 		r.Tail = make([]uint8, 0)
 		for len(cur) > 0 {
-			var t uint8
+			var tmp uint8
 			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			t = cur[0]
+			tmp = cur[0]
 			cur = cur[1:]
-			r.Tail = append(r.Tail, t)
+			r.Tail = append(r.Tail, tmp)
 		}
 	}
 	return cur, nil

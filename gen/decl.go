@@ -215,15 +215,15 @@ func (g *generator) parseIntType(lhs string, t *ast.IntType) {
 func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint) {
 	switch s := s.(type) {
 	case *ast.IntegerConstRef, *ast.IntegerLiteral:
-		g.printf("for i := 0; i < %s; i++ {\n", integer(s))
-		g.parseType(lhs+"[i]", base)
+		g.printf("for idx := 0; idx < %s; idx++ {\n", integer(s))
+		g.parseType(lhs+"[idx]", base)
 		g.printf("}\n")
 
 	case *ast.IDRef:
 		size := fmt.Sprintf("int(%s)", g.ref(s))
 		g.printf("%s = make([]%s, %s)\n", lhs, tipe(base), size)
-		g.printf("for i := 0; i < %s; i++ {\n", size)
-		g.parseType(lhs+"[i]", base)
+		g.printf("for idx := 0; idx < %s; idx++ {\n", size)
+		g.parseType(lhs+"[idx]", base)
 		g.printf("}\n")
 
 	case *ast.Leftover:
@@ -234,9 +234,9 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 	case nil:
 		g.printf("%s = make([]%s, 0)\n", lhs, tipe(base))
 		g.printf("for len(%s) > 0 {\n", g.data)
-		g.printf("var t %s\n", tipe(base))
-		g.parseType("t", base)
-		g.printf("%s = append(%s, t)\n", lhs, lhs)
+		g.printf("var tmp %s\n", tipe(base))
+		g.parseType("tmp", base)
+		g.printf("%s = append(%s, tmp)\n", lhs, lhs)
 		g.printf("}\n")
 
 	default:

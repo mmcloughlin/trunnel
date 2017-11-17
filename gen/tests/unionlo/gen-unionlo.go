@@ -45,13 +45,13 @@ func (u *Unlo) Parse(data []byte) ([]byte, error) {
 			{
 				u.Y = make([]uint8, 0)
 				for len(cur) > 0 {
-					var t uint8
+					var tmp uint8
 					if len(cur) < 1 {
 						return nil, errors.New("data too short")
 					}
-					t = cur[0]
+					tmp = cur[0]
 					cur = cur[1:]
-					u.Y = append(u.Y, t)
+					u.Y = append(u.Y, tmp)
 				}
 			}
 		case u.Tag == 4:
@@ -65,13 +65,13 @@ func (u *Unlo) Parse(data []byte) ([]byte, error) {
 			{
 				u.Z = make([]uint16, 0)
 				for len(cur) > 0 {
-					var t uint16
+					var tmp uint16
 					if len(cur) < 2 {
 						return nil, errors.New("data too short")
 					}
-					t = binary.BigEndian.Uint16(cur)
+					tmp = binary.BigEndian.Uint16(cur)
 					cur = cur[2:]
-					u.Z = append(u.Z, t)
+					u.Z = append(u.Z, tmp)
 				}
 			}
 		}
@@ -89,11 +89,11 @@ func (u *Unlo) Parse(data []byte) ([]byte, error) {
 	}
 	{
 		u.Leftovers = make([]uint8, int(u.Leftoverlen))
-		for i := 0; i < int(u.Leftoverlen); i++ {
+		for idx := 0; idx < int(u.Leftoverlen); idx++ {
 			if len(cur) < 1 {
 				return nil, errors.New("data too short")
 			}
-			u.Leftovers[i] = cur[0]
+			u.Leftovers[idx] = cur[0]
 			cur = cur[1:]
 		}
 	}

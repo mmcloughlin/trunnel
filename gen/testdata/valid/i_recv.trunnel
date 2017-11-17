@@ -1,0 +1,4 @@
+// Same variable collision problem as t_recv.trunnel but with "i" instead.
+struct i_recv {
+    u8 bytes[8];
+};

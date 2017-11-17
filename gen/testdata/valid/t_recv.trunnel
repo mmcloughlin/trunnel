@@ -1,0 +1,7 @@
+// Earlier versions of this code picked variable names as follows:
+// - first letter of type for receiver
+// - temp variable for remaining arrays was also "t"
+// The following code would trigger the bug.
+struct t_recv {
+    u8 rem[];
+};
