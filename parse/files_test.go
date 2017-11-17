@@ -24,11 +24,11 @@ func GlobTest(t *testing.T, pattern string, valid bool) {
 }
 
 func TestValidFiles(t *testing.T) {
-	GlobTest(t, "../testdata/valid/*.trunnel", true)
+	GlobTest(t, "./testdata/valid/*.trunnel", true)
 }
 
 func TestFailingFiles(t *testing.T) {
-	GlobTest(t, "../testdata/failing/*.trunnel", false)
+	GlobTest(t, "./testdata/failing/*.trunnel", false)
 }
 
 func TestTorFiles(t *testing.T) {
