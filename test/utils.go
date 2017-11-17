@@ -1,3 +1,4 @@
+// Package test provides utilities for trunnel testing.
 package test
 
 import (
