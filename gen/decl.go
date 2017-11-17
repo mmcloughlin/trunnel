@@ -19,7 +19,6 @@ func File(pkg string, f *ast.File) ([]byte, error) {
 		w:   buf,
 	}
 	g.file(f)
-	fmt.Println(buf.String())
 	return imports.Process("", buf.Bytes(), nil)
 }
 
@@ -137,19 +136,7 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 		g.printf("%s, %s = string(%s[:i]), %s[i+1:]\n", lhs, g.data, g.data, g.data)
 
 	case *ast.IntType:
-		n := t.Size / 8
-		g.lengthCheck(strconv.Itoa(n))
-		if n == 1 {
-			g.printf("%s = %s[0]\n", lhs, g.data)
-		} else {
-			g.printf("%s = binary.BigEndian.Uint%d(%s)\n", lhs, t.Size, g.data)
-		}
-		if t.Constraint != nil {
-			g.printf("if !(%s) {\n", conditional(lhs, t.Constraint))
-			g.printf("return nil, errors.New(\"integer constraint violated\")\n")
-			g.printf("}\n")
-		}
-		g.printf("%s = %s[%d:]\n", g.data, g.data, n)
+		g.parseIntType(lhs, t)
 
 	case *ast.CharType:
 		g.parseType(lhs, ast.U8)
@@ -172,6 +159,22 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 	default:
 		panic(unexpected(t))
 	}
+}
+
+func (g *generator) parseIntType(lhs string, t *ast.IntType) {
+	n := t.Size / 8
+	g.lengthCheck(strconv.Itoa(n))
+	if n == 1 {
+		g.printf("%s = %s[0]\n", lhs, g.data)
+	} else {
+		g.printf("%s = binary.BigEndian.Uint%d(%s)\n", lhs, t.Size, g.data)
+	}
+	if t.Constraint != nil {
+		g.printf("if !(%s) {\n", conditional(lhs, t.Constraint))
+		g.printf("return nil, errors.New(\"integer constraint violated\")\n")
+		g.printf("}\n")
+	}
+	g.printf("%s = %s[%d:]\n", g.data, g.data, n)
 }
 
 func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint) {
