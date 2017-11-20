@@ -19,7 +19,7 @@ func TestParseEmpty(t *testing.T) {
 }
 
 func TestParseShortCases(t *testing.T) {
-	tags := []byte{TDate, TInteger, TIntarray, TString}
+	tags := []byte{2, 3, 4, 6}
 	for _, tag := range tags {
 		_, err := new(Basic).Parse([]byte{byte(tag), 1})
 		assert.Error(t, err)
@@ -37,7 +37,7 @@ func TestParseCases(t *testing.T) {
 			Name: "date",
 			Data: []byte{2, 7, 225, 11, 15, 'r', 'e', 's', 't'},
 			Expect: &Basic{
-				Tag: TDate,
+				Tag: 2,
 				D:   &Date{Year: 2017, Month: 11, Day: 15},
 			},
 		},
@@ -45,7 +45,7 @@ func TestParseCases(t *testing.T) {
 			Name: "integer",
 			Data: []byte{3, 0, 1, 2, 3, 'r', 'e', 's', 't'},
 			Expect: &Basic{
-				Tag: TInteger,
+				Tag: 3,
 				Num: 0x00010203,
 			},
 		},
@@ -53,7 +53,7 @@ func TestParseCases(t *testing.T) {
 			Name: "int_array",
 			Data: []byte{4, 0, 1, 2, 3, 4, 5, 6, 7, 'r', 'e', 's', 't'},
 			Expect: &Basic{
-				Tag:        TIntarray,
+				Tag:        4,
 				Eightbytes: [8]byte{0, 1, 2, 3, 4, 5, 6, 7},
 			},
 		},
@@ -65,7 +65,7 @@ func TestParseCases(t *testing.T) {
 				'r', 'e', 's', 't',
 			},
 			Expect: &Basic{
-				Tag:    TString,
+				Tag:    6,
 				String: "Hello World!",
 			},
 		},
@@ -84,7 +84,7 @@ func TestParseCases(t *testing.T) {
 func TestParseDateErrors(t *testing.T) {
 	for n := 1; n < 5; n++ {
 		b := make([]byte, n)
-		b[0] = TDate
+		b[0] = 2
 		_, err := new(Basic).Parse(b)
 		assert.Error(t, err)
 	}

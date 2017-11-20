@@ -1,3 +1,7 @@
 const TEST_DEC = 42;
 const TEST_HEX = 0x42;
 const TEST_OCT = 042;
+
+struct constants {
+    u8 x IN [ TEST_DEC, TEST_HEX, TEST_OCT ];
+}
