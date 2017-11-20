@@ -8,16 +8,6 @@ import (
 	"errors"
 )
 
-const TDate = 2
-
-const TInteger = 3
-
-const TIntarray = 4
-
-const TVararray = 5
-
-const TString = 6
-
 type Date struct {
 	Year  uint16
 	Month uint8
@@ -65,14 +55,14 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 			return nil, errors.New("data too short")
 		}
 		b.Tag = cur[0]
-		if !(b.Tag == TDate || b.Tag == TInteger || b.Tag == TIntarray || b.Tag == TVararray || b.Tag == TString) {
+		if !(b.Tag == 2 || b.Tag == 3 || b.Tag == 4 || b.Tag == 5 || b.Tag == 6) {
 			return nil, errors.New("integer constraint violated")
 		}
 		cur = cur[1:]
 	}
 	{
 		switch {
-		case b.Tag == TDate:
+		case b.Tag == 2:
 			{
 				var err error
 				b.D = new(Date)
@@ -81,7 +71,7 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 					return nil, err
 				}
 			}
-		case b.Tag == TInteger:
+		case b.Tag == 3:
 			{
 				if len(cur) < 4 {
 					return nil, errors.New("data too short")
@@ -89,7 +79,7 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 				b.Num = binary.BigEndian.Uint32(cur)
 				cur = cur[4:]
 			}
-		case b.Tag == TIntarray:
+		case b.Tag == 4:
 			{
 				for idx := 0; idx < 8; idx++ {
 					if len(cur) < 1 {
@@ -99,7 +89,7 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 					cur = cur[1:]
 				}
 			}
-		case b.Tag == TString:
+		case b.Tag == 6:
 			{
 				i := bytes.IndexByte(cur, 0)
 				if i < 0 {

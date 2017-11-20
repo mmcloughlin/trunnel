@@ -29,7 +29,8 @@ type generator struct {
 	pkg string
 	w   io.Writer
 
-	structs map[string]*ast.Struct
+	structs   map[string]*ast.Struct
+	constants map[string]int64
 
 	receiver string // method receiver variable
 	data     string // data variable
@@ -48,9 +49,6 @@ func (g *generator) file(f *ast.File) error {
 		return err
 	}
 
-	for _, c := range f.Constants {
-		g.constant(c)
-	}
 	for _, c := range f.Contexts {
 		g.context(c)
 	}
@@ -68,11 +66,13 @@ func (g *generator) init(f *ast.File) error {
 	}
 	g.structs = s
 
-	return nil
-}
+	v, err := inspect.Constants(f)
+	if err != nil {
+		return err
+	}
+	g.constants = v
 
-func (g *generator) constant(c *ast.Constant) {
-	g.printf("const %s = %d\n\n", name(c.Name), c.Value)
+	return nil
 }
 
 func (g *generator) context(c *ast.Context) {
@@ -84,6 +84,9 @@ func (g *generator) context(c *ast.Context) {
 }
 
 func (g *generator) structure(s *ast.Struct) {
+	if s.Extern() {
+		return
+	}
 	g.structDecl(s)
 	g.parse(s)
 }
@@ -99,7 +102,7 @@ func (g *generator) structDecl(s *ast.Struct) {
 func (g *generator) structMemberDecl(m ast.Member) {
 	switch m := m.(type) {
 	case *ast.Field:
-		g.printf("\t%s %s\n", name(m.Name), tipe(m.Type))
+		g.printf("\t%s %s\n", name(m.Name), g.tipe(m.Type))
 	case *ast.UnionMember:
 		g.structUnionMemberDecl(m)
 	case *ast.EOS:
@@ -207,7 +210,7 @@ func (g *generator) parseIntType(lhs string, t *ast.IntType) {
 		g.printf("%s = binary.BigEndian.Uint%d(%s)\n", lhs, t.Size, g.data)
 	}
 	if t.Constraint != nil {
-		g.printf("if !(%s) {\n", conditional(lhs, t.Constraint))
+		g.printf("if !(%s) {\n", g.conditional(lhs, t.Constraint))
 		g.printf("return nil, errors.New(\"integer constraint violated\")\n")
 		g.printf("}\n")
 	}
@@ -217,13 +220,13 @@ func (g *generator) parseIntType(lhs string, t *ast.IntType) {
 func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint) {
 	switch s := s.(type) {
 	case *ast.IntegerConstRef, *ast.IntegerLiteral:
-		g.printf("for idx := 0; idx < %s; idx++ {\n", integer(s))
+		g.printf("for idx := 0; idx < %s; idx++ {\n", g.integer(s))
 		g.parseType(lhs+"[idx]", base)
 		g.printf("}\n")
 
 	case *ast.IDRef:
 		size := fmt.Sprintf("int(%s)", g.ref(s))
-		g.printf("%s = make([]%s, %s)\n", lhs, tipe(base), size)
+		g.printf("%s = make([]%s, %s)\n", lhs, g.tipe(base), size)
 		g.printf("for idx := 0; idx < %s; idx++ {\n", size)
 		g.parseType(lhs+"[idx]", base)
 		g.printf("}\n")
@@ -234,9 +237,9 @@ func (g *generator) parseArray(lhs string, base ast.Type, s ast.LengthConstraint
 		})
 
 	case nil:
-		g.printf("%s = make([]%s, 0)\n", lhs, tipe(base))
+		g.printf("%s = make([]%s, 0)\n", lhs, g.tipe(base))
 		g.printf("for len(%s) > 0 {\n", g.data)
-		g.printf("var tmp %s\n", tipe(base))
+		g.printf("var tmp %s\n", g.tipe(base))
 		g.parseType("tmp", base)
 		g.printf("%s = append(%s, tmp)\n", lhs, lhs)
 		g.printf("}\n")
@@ -264,7 +267,7 @@ func (g *generator) parseUnionMember(u *ast.UnionMember) {
 		if c.Case == nil {
 			g.printf("default:\n")
 		} else {
-			g.printf("case %s:\n", conditional(tag, c.Case))
+			g.printf("case %s:\n", g.conditional(tag, c.Case))
 		}
 		for _, m := range c.Members {
 			g.parseMember(m)
@@ -278,8 +281,8 @@ func (g *generator) constrained(c ast.LengthConstraint, f func()) {
 
 	switch c := c.(type) {
 	case *ast.Leftover:
-		g.lengthCheck(integer(c.Num))
-		n = fmt.Sprintf("len(%s)-%s", g.data, integer(c.Num))
+		g.lengthCheck(g.integer(c.Num))
+		n = fmt.Sprintf("len(%s)-%s", g.data, g.integer(c.Num))
 
 	case *ast.IDRef:
 		n = fmt.Sprintf("int(%s)", g.ref(c))
@@ -312,20 +315,37 @@ func (g *generator) assertEnd() {
 	g.printf("if len(%s) > 0 { return nil, errors.New(\"trailing data disallowed\") }\n", g.data)
 }
 
-func conditional(v string, c *ast.IntegerList) string {
+func (g *generator) integer(i ast.Integer) string {
+	var x int64
+	switch i := i.(type) {
+	case *ast.IntegerConstRef:
+		v, ok := g.constants[i.Name]
+		if !ok {
+			panic("unknown constant") // XXX
+		}
+		x = v
+	case *ast.IntegerLiteral:
+		x = i.Value
+	default:
+		panic(unexpected(i))
+	}
+	return strconv.FormatInt(x, 10)
+}
+
+func (g *generator) conditional(v string, c *ast.IntegerList) string {
 	clauses := make([]string, len(c.Ranges))
 	for i, r := range c.Ranges {
 		// Single case
 		if r.High == nil {
-			clauses[i] = fmt.Sprintf("%s == %s", v, integer(r.Low))
+			clauses[i] = fmt.Sprintf("%s == %s", v, g.integer(r.Low))
 		} else {
-			clauses[i] = fmt.Sprintf("(%s <= %s && %s <= %s)", integer(r.Low), v, v, integer(r.High))
+			clauses[i] = fmt.Sprintf("(%s <= %s && %s <= %s)", g.integer(r.Low), v, v, g.integer(r.High))
 		}
 	}
 	return strings.Join(clauses, " || ")
 }
 
-func tipe(t interface{}) string {
+func (g *generator) tipe(t interface{}) string {
 	switch t := t.(type) {
 	case *ast.NulTermString:
 		return "string"
@@ -338,22 +358,11 @@ func tipe(t interface{}) string {
 	case *ast.StructRef:
 		return "*" + name(t.Name)
 	case *ast.FixedArrayMember:
-		return fmt.Sprintf("[%s]%s", integer(t.Size), tipe(t.Base))
+		return fmt.Sprintf("[%s]%s", g.integer(t.Size), g.tipe(t.Base))
 	case *ast.VarArrayMember:
-		return fmt.Sprintf("[]%s", tipe(t.Base))
+		return fmt.Sprintf("[]%s", g.tipe(t.Base))
 	default:
 		panic(unexpected(t))
-	}
-}
-
-func integer(i ast.Integer) string {
-	switch i := i.(type) {
-	case *ast.IntegerConstRef:
-		return name(i.Name)
-	case *ast.IntegerLiteral:
-		return strconv.FormatInt(i.Value, 10)
-	default:
-		panic(unexpected(i))
 	}
 }
 

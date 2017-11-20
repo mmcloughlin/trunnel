@@ -2,6 +2,7 @@
 package test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -24,7 +25,7 @@ func Glob(t *testing.T, pattern string, f func(*testing.T, string)) {
 
 // Build checks whether Go source code src builds correctly. Returns the output
 // of "go build" and an error, if any.
-func Build(src []byte) ([]byte, error) {
+func Build(srcs [][]byte) ([]byte, error) {
 	dir, err := ioutil.TempDir("", "trunnel")
 	if err != nil {
 		return nil, err
@@ -33,11 +34,16 @@ func Build(src []byte) ([]byte, error) {
 		_ = os.RemoveAll(dir)
 	}()
 
-	srcfile := filepath.Join(dir, "src.go")
-	if err := ioutil.WriteFile(srcfile, src, 0600); err != nil {
-		return nil, err
+	filenames := []string{}
+	for i, src := range srcs {
+		filename := filepath.Join(dir, fmt.Sprintf("src%03d.go", i))
+		if err := ioutil.WriteFile(filename, src, 0600); err != nil {
+			return nil, err
+		}
+		filenames = append(filenames, filename)
 	}
 
-	cmd := exec.Command("go", "build", srcfile)
+	args := append([]string{"build"}, filenames...)
+	cmd := exec.Command("go", args...)
 	return cmd.CombinedOutput()
 }
