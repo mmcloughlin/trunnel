@@ -56,3 +56,12 @@ func (l *Leftover) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseLeftover(data []byte) (*Leftover, error) {
+	l := new(Leftover)
+	_, err := l.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
+}

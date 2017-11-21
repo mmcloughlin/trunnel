@@ -42,6 +42,15 @@ func (p *Point) Parse(data []byte) ([]byte, error) {
 	return cur, nil
 }
 
+func ParsePoint(data []byte) (*Point, error) {
+	p := new(Point)
+	_, err := p.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
 type Twosize struct {
 	X uint32
 	Y uint16
@@ -75,6 +84,15 @@ func (t *Twosize) Parse(data []byte, flag Flag) ([]byte, error) {
 	return cur, nil
 }
 
+func ParseTwosize(data []byte, flag Flag) (*Twosize, error) {
+	t := new(Twosize)
+	_, err := t.Parse(data, flag)
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
 type Varsize struct {
 	A   uint32
 	Msg []uint8
@@ -100,6 +118,15 @@ func (v *Varsize) Parse(data []byte, count Count) ([]byte, error) {
 		}
 	}
 	return cur, nil
+}
+
+func ParseVarsize(data []byte, count Count) (*Varsize, error) {
+	v := new(Varsize)
+	_, err := v.Parse(data, count)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 type Ccomplex struct {
@@ -176,4 +203,13 @@ func (c *Ccomplex) Parse(data []byte, flag Flag, count Count) ([]byte, error) {
 		cur = restore
 	}
 	return cur, nil
+}
+
+func ParseCcomplex(data []byte, flag Flag, count Count) (*Ccomplex, error) {
+	c := new(Ccomplex)
+	_, err := c.Parse(data, flag, count)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }

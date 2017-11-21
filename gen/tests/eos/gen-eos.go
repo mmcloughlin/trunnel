@@ -35,3 +35,12 @@ func (f *Fourbytes) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseFourbytes(data []byte) (*Fourbytes, error) {
+	f := new(Fourbytes)
+	_, err := f.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}

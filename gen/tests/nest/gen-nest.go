@@ -28,6 +28,15 @@ func (p *Point) Parse(data []byte) ([]byte, error) {
 	return cur, nil
 }
 
+func ParsePoint(data []byte) (*Point, error) {
+	p := new(Point)
+	_, err := p.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
 type Rect struct {
 	NorthEast *Point
 	SouthWest *Point
@@ -52,4 +61,13 @@ func (r *Rect) Parse(data []byte) ([]byte, error) {
 		}
 	}
 	return cur, nil
+}
+
+func ParseRect(data []byte) (*Rect, error) {
+	r := new(Rect)
+	_, err := r.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
 }

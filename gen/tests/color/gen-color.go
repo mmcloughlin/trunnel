@@ -35,3 +35,12 @@ func (c *Color) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseColor(data []byte) (*Color, error) {
+	c := new(Color)
+	_, err := c.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}

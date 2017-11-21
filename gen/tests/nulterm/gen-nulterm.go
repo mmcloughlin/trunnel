@@ -39,3 +39,12 @@ func (n *NulTerm) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseNulTerm(data []byte) (*NulTerm, error) {
+	n := new(NulTerm)
+	_, err := n.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return n, nil
+}

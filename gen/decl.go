@@ -87,8 +87,14 @@ func (g *generator) structure(s *ast.Struct) {
 	if s.Extern() {
 		return
 	}
+
+	g.receiver = strings.ToLower(s.Name[:1])
+
 	g.structDecl(s)
 	g.parse(s)
+	g.parseConstructor(s)
+
+	g.receiver = ""
 }
 
 func (g *generator) structDecl(s *ast.Struct) {
@@ -125,9 +131,18 @@ func (g *generator) structUnionMemberDecl(m *ast.UnionMember) {
 	}
 }
 
+func (g *generator) parseConstructor(s *ast.Struct) {
+	n := name(s.Name)
+	g.printf("func Parse%s(data []byte%s) (*%s, error) {\n", n, contextSignature(s.Contexts), n)
+	g.printf("%s := new(%s)\n", g.receiver, n)
+	g.printf("_, err := %s.Parse(data%s)\n", g.receiver, contextArgs(s.Contexts))
+	g.printf("if err != nil { return nil, err }\n")
+	g.printf("return %s, nil\n", g.receiver)
+	g.printf("}\n\n")
+}
+
 // parse generates a parse function for the type.
 func (g *generator) parse(s *ast.Struct) {
-	g.receiver = strings.ToLower(s.Name[:1])
 	g.printf("func (%s *%s) Parse(data []byte%s) ([]byte, error) {\n", g.receiver, name(s.Name), contextSignature(s.Contexts))
 	g.printf("cur := data\n")
 	g.data = "cur"
@@ -135,7 +150,6 @@ func (g *generator) parse(s *ast.Struct) {
 		g.parseMember(m)
 	}
 	g.printf("return %s, nil\n}\n\n", g.data)
-	g.receiver = ""
 	g.data = ""
 }
 

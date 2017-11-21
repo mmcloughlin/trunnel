@@ -22,3 +22,12 @@ func (c *Constants) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseConstants(data []byte) (*Constants, error) {
+	c := new(Constants)
+	_, err := c.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}

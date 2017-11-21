@@ -35,3 +35,12 @@ func (r *Rem) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseRem(data []byte) (*Rem, error) {
+	r := new(Rem)
+	_, err := r.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}

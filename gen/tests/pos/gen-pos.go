@@ -47,3 +47,12 @@ func (h *Haspos) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseHaspos(data []byte) (*Haspos, error) {
+	h := new(Haspos)
+	_, err := h.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return h, nil
+}

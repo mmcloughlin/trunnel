@@ -39,6 +39,15 @@ func (c *Color) Parse(data []byte) ([]byte, error) {
 	return cur, nil
 }
 
+func ParseColor(data []byte) (*Color, error) {
+	c := new(Color)
+	_, err := c.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 type FixieDemo struct {
 	Bytes      [8]uint8
 	Letters    [8]byte
@@ -106,4 +115,13 @@ func (f *FixieDemo) Parse(data []byte) ([]byte, error) {
 		}
 	}
 	return cur, nil
+}
+
+func ParseFixieDemo(data []byte) (*FixieDemo, error) {
+	f := new(FixieDemo)
+	_, err := f.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }

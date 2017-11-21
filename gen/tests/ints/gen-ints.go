@@ -46,3 +46,12 @@ func (i *Ints) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseInts(data []byte) (*Ints, error) {
+	i := new(Ints)
+	_, err := i.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return i, nil
+}

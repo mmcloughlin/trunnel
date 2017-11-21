@@ -118,3 +118,12 @@ func (u *UnionWithLen) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseUnionWithLen(data []byte) (*UnionWithLen, error) {
+	u := new(UnionWithLen)
+	_, err := u.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}

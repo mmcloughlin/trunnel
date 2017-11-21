@@ -40,6 +40,15 @@ func (d *Date) Parse(data []byte) ([]byte, error) {
 	return cur, nil
 }
 
+func ParseDate(data []byte) (*Date, error) {
+	d := new(Date)
+	_, err := d.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
 type Basic struct {
 	Tag        uint8
 	D          *Date
@@ -100,4 +109,13 @@ func (b *Basic) Parse(data []byte) ([]byte, error) {
 		}
 	}
 	return cur, nil
+}
+
+func ParseBasic(data []byte) (*Basic, error) {
+	b := new(Basic)
+	_, err := b.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }

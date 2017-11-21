@@ -99,3 +99,12 @@ func (u *Unlo) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseUnlo(data []byte) (*Unlo, error) {
+	u := new(Unlo)
+	_, err := u.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}

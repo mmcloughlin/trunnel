@@ -33,3 +33,12 @@ func (v *VarArray) Parse(data []byte) ([]byte, error) {
 	}
 	return cur, nil
 }
+
+func ParseVarArray(data []byte) (*VarArray, error) {
+	v := new(VarArray)
+	_, err := v.Parse(data)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
