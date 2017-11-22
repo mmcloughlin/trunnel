@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/mmcloughlin/trunnel/ast"
+	"github.com/mmcloughlin/trunnel/fault"
 )
 
 // Structs builds a name to struct mapping for all structs in the file.
@@ -32,4 +33,33 @@ func Constants(f *ast.File) (map[string]int64, error) {
 		v[n] = c.Value
 	}
 	return v, nil
+}
+
+// Resolver will resolve AST integers to actual integer values based on defined
+// constants.
+type Resolver struct {
+	constants map[string]int64
+}
+
+// NewResolver builds a resolver for the given constants mapping.
+func NewResolver(c map[string]int64) *Resolver {
+	return &Resolver{
+		constants: c,
+	}
+}
+
+// Integer resolves i to an integer value.
+func (r *Resolver) Integer(i ast.Integer) (int64, error) {
+	switch i := i.(type) {
+	case *ast.IntegerConstRef:
+		v, ok := r.constants[i.Name]
+		if !ok {
+			return 0, errors.New("constant undefined")
+		}
+		return v, nil
+	case *ast.IntegerLiteral:
+		return i.Value, nil
+	default:
+		return 0, fault.NewUnexpectedType(i)
+	}
 }

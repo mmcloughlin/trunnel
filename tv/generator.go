@@ -31,16 +31,16 @@ func Generate(f *ast.File) (map[string][]Vector, error) {
 }
 
 type generator struct {
-	constants   map[string]int64
+	resolver    *inspect.Resolver
 	constraints map[string]int64
 }
 
 func (g *generator) init(f *ast.File) error {
-	v, err := inspect.Constants(f)
+	c, err := inspect.Constants(f)
 	if err != nil {
 		return err
 	}
-	g.constants = v
+	g.resolver = inspect.NewResolver(c)
 
 	return nil
 }
@@ -137,7 +137,7 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 	s := make(intervals.Set, len(l.Ranges))
 	for i, r := range l.Ranges {
-		lo, err := g.integer(r.Low)
+		lo, err := g.resolver.Integer(r.Low)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +145,7 @@ func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 			s[i] = intervals.Single(uint64(lo)) // XXX cast
 			continue
 		}
-		hi, err := g.integer(r.High)
+		hi, err := g.resolver.Integer(r.High)
 		if err != nil {
 			return nil, err
 		}
@@ -155,21 +155,6 @@ func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 		return nil, errors.New("overlapping intervals")
 	}
 	return s, nil
-}
-
-func (g *generator) integer(i ast.Integer) (int64, error) {
-	switch i := i.(type) {
-	case *ast.IntegerConstRef:
-		v, ok := g.constants[i.Name]
-		if !ok {
-			return 0, errors.New("constant undefined")
-		}
-		return v, nil
-	case *ast.IntegerLiteral:
-		return i.Value, nil
-	default:
-		return 0, errors.New("unexpected type")
-	}
 }
 
 func intrand(bits int) []byte {

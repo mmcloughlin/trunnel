@@ -29,8 +29,8 @@ type generator struct {
 	pkg string
 	w   io.Writer
 
-	structs   map[string]*ast.Struct
-	constants map[string]int64
+	structs  map[string]*ast.Struct
+	resolver *inspect.Resolver
 
 	receiver string // method receiver variable
 	data     string // data variable
@@ -66,11 +66,11 @@ func (g *generator) init(f *ast.File) error {
 	}
 	g.structs = s
 
-	v, err := inspect.Constants(f)
+	c, err := inspect.Constants(f)
 	if err != nil {
 		return err
 	}
-	g.constants = v
+	g.resolver = inspect.NewResolver(c)
 
 	return nil
 }
@@ -330,18 +330,9 @@ func (g *generator) assertEnd() {
 }
 
 func (g *generator) integer(i ast.Integer) string {
-	var x int64
-	switch i := i.(type) {
-	case *ast.IntegerConstRef:
-		v, ok := g.constants[i.Name]
-		if !ok {
-			panic("unknown constant") // XXX
-		}
-		x = v
-	case *ast.IntegerLiteral:
-		x = i.Value
-	default:
-		panic(unexpected(i))
+	x, err := g.resolver.Integer(i)
+	if err != nil {
+		panic(err) // XXX panic
 	}
 	return strconv.FormatInt(x, 10)
 }
