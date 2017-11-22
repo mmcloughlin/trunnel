@@ -103,3 +103,24 @@ func TestNulTerm(t *testing.T) {
 	}
 	assert.Equal(t, expect, v)
 }
+
+func TestFixedArray(t *testing.T) {
+	f, err := parse.String(`
+	const NUM_BYTES = 8;
+	struct color { u8 r; u8 g; u8 b; }
+	struct fixie {
+		u8 bytes[NUM_BYTES];
+		char letters[NUM_BYTES];
+		u16 shortwords[4];
+		u32 words[2];
+		u64 big_words[2];
+		struct color colors[2];
+	}`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		v, err := Generate(f)
+		require.NoError(t, err)
+		d := v["fixie"][0].Data
+		require.Len(t, d, 8+8+2*4+4*2+8*2+3*2)
+	}
+}

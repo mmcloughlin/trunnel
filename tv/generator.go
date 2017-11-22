@@ -10,24 +10,65 @@ import (
 	"github.com/mmcloughlin/trunnel/internal/intervals"
 )
 
+// Constraints records fixed values for struct/context fields.
+type Constraints map[string]int64
+
+// NewConstraints builds an empty set of constraints.
+func NewConstraints() Constraints {
+	return Constraints{}
+}
+
+// Merge builds a new set of constraints by merging c and other. Errors on conflict.
+func (c Constraints) Merge(other Constraints) (Constraints, error) {
+	m := map[string]int64{}
+	for n, v := range c {
+		m[n] = v
+	}
+	for n, v := range other {
+		if w, exists := m[n]; exists && v != w {
+			return nil, errors.New("constraint conflict")
+		}
+		m[n] = v
+	}
+	return m, nil
+}
+
 // Vector is a test vector.
 type Vector struct {
 	Data        []byte
-	Constraints map[string]int64
+	Constraints Constraints
 }
 
 // NewEmptyVector builds an empty test vector.
 func NewEmptyVector() Vector {
 	return Vector{
 		Data:        []byte{},
-		Constraints: map[string]int64{},
+		Constraints: NewConstraints(),
 	}
+}
+
+func cross(a, b []Vector) ([]Vector, error) {
+	p := []Vector{}
+	for _, u := range a {
+		for _, w := range b {
+			m, err := u.Constraints.Merge(w.Constraints)
+			if err != nil {
+				return nil, err
+			}
+			v := Vector{
+				Data:        append(u.Data, w.Data...),
+				Constraints: m,
+			}
+			p = append(p, v)
+		}
+	}
+	return p, nil
 }
 
 type generator struct {
 	structs     map[string]*ast.Struct
 	resolver    *inspect.Resolver
-	constraints map[string]int64
+	constraints Constraints
 	rnd         random.Interface
 }
 
@@ -121,6 +162,9 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 	case *ast.IntType:
 		return g.intType(f.Name, t)
 
+	case *ast.CharType:
+		return g.intType(f.Name, ast.U8)
+
 	case *ast.NulTermString:
 		return []Vector{
 			{
@@ -135,6 +179,9 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 			return nil, errors.New("could not resolve struct name")
 		}
 		return g.structure(s)
+
+	case *ast.FixedArrayMember:
+		return g.array(t.Base, t.Size)
 
 	default:
 		return nil, fault.NewUnexpectedType(t)
@@ -168,6 +215,25 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 	}, nil
 }
 
+func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, error) {
+	v := []Vector{NewEmptyVector()}
+	n, err := g.resolver.Integer(s)
+	if err != nil {
+		return nil, err
+	}
+	for i := int64(0); i < n; i++ {
+		w, err := g.field(&ast.Field{Type: base})
+		if err != nil {
+			return nil, err
+		}
+		v, err = cross(w, v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return v, nil
+}
+
 // intervals builds intervals object from an integer list.
 func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 	s := make(intervals.Set, len(l.Ranges))
@@ -195,7 +261,9 @@ func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 func (g *generator) randint(bits int) []byte {
 	n := bits / 8
 	b := make([]byte, n)
-	g.rnd.Read(b)
+	if _, err := g.rnd.Read(b); err != nil {
+		panic(err) // should never happen
+	}
 	return b
 }
 
