@@ -3,10 +3,13 @@ package fault
 
 import "fmt"
 
+// UnexpectedType is raised when a function receives an argument of an
+// unexpected type. This could happen when visiting a malformed AST, for example.
 type UnexpectedType struct {
 	t interface{}
 }
 
+// NewUnexpectedType builds an UnexpectedType error for the object t.
 func NewUnexpectedType(t interface{}) UnexpectedType {
 	return UnexpectedType{t: t}
 }

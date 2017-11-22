@@ -10,11 +10,13 @@ import (
 	"github.com/mmcloughlin/trunnel/internal/intervals"
 )
 
+// Vector is a test vector.
 type Vector struct {
 	Data        []byte
 	Constraints map[string]int64
 }
 
+// NewEmptyVector builds an empty test vector.
 func NewEmptyVector() Vector {
 	return Vector{
 		Data:        []byte{},
@@ -22,6 +24,7 @@ func NewEmptyVector() Vector {
 	}
 }
 
+// Generate generates a set of test vectors for the types defined in f.
 func Generate(f *ast.File) (map[string][]Vector, error) {
 	g := &generator{}
 	return g.file(f)

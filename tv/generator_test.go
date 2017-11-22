@@ -11,7 +11,7 @@ import (
 )
 
 func String(code string) (map[string][]Vector, error) {
-	f, err := parse.String("struct color { u8 r; u8 g; u8 b; }")
+	f, err := parse.String(code)
 	if err != nil {
 		return nil, err
 	}
