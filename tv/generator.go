@@ -2,8 +2,8 @@ package tv
 
 import (
 	"errors"
-	"math/rand"
 
+	"github.com/mmcloughlin/random"
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"
@@ -24,18 +24,41 @@ func NewEmptyVector() Vector {
 	}
 }
 
+type generator struct {
+	structs     map[string]*ast.Struct
+	resolver    *inspect.Resolver
+	constraints map[string]int64
+	rnd         random.Interface
+}
+
 // Generate generates a set of test vectors for the types defined in f.
-func Generate(f *ast.File) (map[string][]Vector, error) {
-	g := &generator{}
+func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
+	g := &generator{
+		rnd: random.New(),
+	}
+	for _, opt := range opts {
+		opt(g)
+	}
 	return g.file(f)
 }
 
-type generator struct {
-	resolver    *inspect.Resolver
-	constraints map[string]int64
+// Option is an option to control test vector generation.
+type Option func(*generator)
+
+// WithRandom sets the random source for test vector generation.
+func WithRandom(r random.Interface) Option {
+	return func(g *generator) {
+		g.rnd = r
+	}
 }
 
 func (g *generator) init(f *ast.File) error {
+	s, err := inspect.Structs(f)
+	if err != nil {
+		return err
+	}
+	g.structs = s
+
 	c, err := inspect.Constants(f)
 	if err != nil {
 		return err
@@ -51,13 +74,8 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 		return nil, err
 	}
 
-	structs, err := inspect.Structs(f)
-	if err != nil {
-		return nil, err
-	}
-
 	v := map[string][]Vector{}
-	for _, s := range structs {
+	for _, s := range f.Structs {
 		v[s.Name], err = g.structure(s)
 		if err != nil {
 			return nil, err
@@ -103,6 +121,21 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 	case *ast.IntType:
 		return g.intType(f.Name, t)
 
+	case *ast.NulTermString:
+		return []Vector{
+			{
+				Data:        g.randnulterm(2, 20),
+				Constraints: g.constraints,
+			},
+		}, nil
+
+	case *ast.StructRef:
+		s, ok := g.structs[t.Name]
+		if !ok {
+			return nil, errors.New("could not resolve struct name")
+		}
+		return g.structure(s)
+
 	default:
 		return nil, fault.NewUnexpectedType(t)
 	}
@@ -114,6 +147,7 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 	switch x, ok := g.constraints[name]; {
 	case ok:
 		b = intbytes(x, t.Size)
+
 	case t.Constraint != nil:
 		s, err := g.intervals(t.Constraint)
 		if err != nil {
@@ -121,8 +155,9 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 		}
 		r := s.Random()
 		b = intbytes(int64(r), t.Size) // XXX cast
+
 	default:
-		b = intrand(t.Size)
+		b = g.randint(t.Size)
 	}
 
 	return []Vector{
@@ -157,11 +192,23 @@ func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
 	return s, nil
 }
 
-func intrand(bits int) []byte {
+func (g *generator) randint(bits int) []byte {
 	n := bits / 8
 	b := make([]byte, n)
-	rand.Read(b)
+	g.rnd.Read(b)
 	return b
+}
+
+// randnulterm generates a random nul-terminated string of length in [a,b]
+// inclusive of a and b, not including the nul byte.
+func (g *generator) randnulterm(a, b int) []byte {
+	const alpha = "abcdefghijklmnopqrstuvwxyz"
+	n := a + g.rnd.Intn(b-a+1)
+	s := make([]byte, n+1)
+	for i := 0; i < n; i++ {
+		s[i] = alpha[g.rnd.Intn(len(alpha))]
+	}
+	return s
 }
 
 func intbytes(x int64, bits int) []byte {
