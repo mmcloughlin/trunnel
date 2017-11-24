@@ -15,10 +15,10 @@ type Vector struct {
 	Constraints Constraints
 }
 
-// NewEmptyVector builds an empty test vector.
-func NewEmptyVector() Vector {
+// NewVector builds a test vector with empty constraints.
+func NewVector(b []byte) Vector {
 	return Vector{
-		Data:        []byte{},
+		Data:        b,
 		Constraints: NewConstraints(),
 	}
 }
@@ -104,18 +104,30 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 }
 
 func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
-	n := len(s.Members)
-	vectors := []Vector{
+	vs := []Vector{
 		{
 			Data:        []byte{},
 			Constraints: g.constraints.CloneGlobal(),
 		},
 	}
+	vs, err := g.members(vs, s.Members)
+	if err != nil {
+		return nil, err
+	}
+	g.constraints.ClearLocal()
+	for _, v := range vs {
+		v.Constraints.ClearLocal()
+	}
+	return vs, nil
+}
+
+func (g *generator) members(vs []Vector, ms []ast.Member) ([]Vector, error) {
+	n := len(ms)
 	for i := n - 1; i >= 0; i-- {
 		extended := []Vector{}
-		for _, v := range vectors {
+		for _, v := range vs {
 			g.constraints = v.Constraints
-			mvs, err := g.member(s.Members[i])
+			mvs, err := g.member(ms[i])
 			if err != nil {
 				return nil, err
 			}
@@ -125,16 +137,17 @@ func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
 				extended = append(extended, mv)
 			}
 		}
-		vectors = extended
+		vs = extended
 	}
-	g.constraints.ClearLocal()
-	return vectors, nil
+	return vs, nil
 }
 
 func (g *generator) member(m ast.Member) ([]Vector, error) {
 	switch m := m.(type) {
 	case *ast.Field:
 		return g.field(m)
+	case *ast.UnionMember:
+		return g.union(m)
 	default:
 		return nil, fault.NewUnexpectedType(m)
 	}
@@ -210,6 +223,9 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 	case nil:
 		n = int64(g.randbtw(1, 20))
 
+	case *ast.Leftover:
+		return nil, fault.ErrNotImplemented
+
 	default:
 		return nil, fault.NewUnexpectedType(s)
 	}
@@ -225,6 +241,39 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 		}
 	}
 	return v, nil
+}
+
+func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
+	// TODO(mbm): test vectors for length-constrained unions
+	if u.Length != nil {
+		return nil, fault.ErrNotImplemented
+	}
+
+	base := g.constraints.Clone()
+	results := []Vector{}
+
+	for _, c := range u.Cases {
+		// TODO(mbm): test vectors union with default case
+		if c.Case == nil {
+			return nil, fault.ErrNotImplemented
+		}
+
+		i, err := g.intervals(c.Case)
+		if err != nil {
+			return nil, err
+		}
+
+		t := i.Random()
+		g.constraints = base.Clone()
+		g.constraints.SetRef(u.Tag, int64(t)) // XXX cast
+		vs, err := g.members([]Vector{g.vector([]byte{})}, c.Members)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, vs...)
+	}
+
+	return results, nil
 }
 
 // vector builds vector with the current constraints.

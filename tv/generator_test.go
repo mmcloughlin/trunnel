@@ -194,3 +194,54 @@ func TestRemaining(t *testing.T) {
 	}
 	assert.Equal(t, expect, vs)
 }
+
+func TestLeftover(t *testing.T) {
+	_, err := String(`struct leftover {
+		u32 head[2];
+		u32 mid[..-8];
+		u32 tail[2];
+	};`)
+	assert.EqualError(t, err, "not implemented")
+}
+
+func TestUnionBasic(t *testing.T) {
+	vs, err := String(`struct basic {
+		u8 tag;
+		union u[tag] {
+			1: u8 r; u8 g; u8 b;
+			2: u16 y; u8 m; u8 d;
+		};
+		u16 right_after_the_union;
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"basic": []Vector{
+			NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
+			NewVector([]byte{0x02, 0x1b, 0x97, 0xbf, 0x64, 0x53, 0x8c}),
+		},
+	}
+	assert.Equal(t, expect, vs)
+}
+
+func TestTagDoubleUse(t *testing.T) {
+	f, err := parse.String(`struct dbltag {
+		u8 tag;
+		union u[tag] {
+			1: u8 a;
+			2: u16 b;
+		};
+		union w[tag] {
+			1: u8 c;
+			2: u16 d;
+		};
+	};`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		b := vs["dbltag"][0].Data
+		tag := b[0]
+		require.True(t, tag == 1 || tag == 2)
+		require.Len(t, b, 1+2*int(tag)) // confirms same tag is used for both unions
+	}
+}

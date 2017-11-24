@@ -1,19 +1,20 @@
 // Package fault defines trunnel error types.
 package fault
 
-import "fmt"
+import "github.com/pkg/errors"
+
+// ErrNotImplemented indicates a trunnel feature is not implemented.
+var ErrNotImplemented = errors.New("not implemented")
 
 // UnexpectedType is raised when a function receives an argument of an
 // unexpected type. This could happen when visiting a malformed AST, for example.
 type UnexpectedType struct {
-	t interface{}
+	error
 }
 
 // NewUnexpectedType builds an UnexpectedType error for the object t.
 func NewUnexpectedType(t interface{}) UnexpectedType {
-	return UnexpectedType{t: t}
-}
-
-func (u UnexpectedType) Error() string {
-	return fmt.Sprintf("unexpected type %T", u.t)
+	return UnexpectedType{
+		error: errors.Errorf("unexpected type %T", t),
+	}
 }
