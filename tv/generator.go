@@ -205,7 +205,10 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 		n = i
 
 	case *ast.IDRef:
-		n = iv.Constraints.LookupOrCreateRef(s, int64(1+g.rnd.Intn(19)))
+		n = iv.Constraints.LookupOrCreateRef(s, int64(g.randbtw(1, 20)))
+
+	case nil:
+		n = int64(g.randbtw(1, 20))
 
 	default:
 		return nil, fault.NewUnexpectedType(s)
@@ -265,11 +268,16 @@ func (g *generator) randint(bits int) []byte {
 	return b
 }
 
+// randbtw generates an integer between a and b, inclusive.
+func (g *generator) randbtw(a, b int) int {
+	return a + g.rnd.Intn(b-a+1)
+}
+
 // randnulterm generates a random nul-terminated string of length in [a,b]
 // inclusive of a and b, not including the nul byte.
 func (g *generator) randnulterm(a, b int) []byte {
 	const alpha = "abcdefghijklmnopqrstuvwxyz"
-	n := a + g.rnd.Intn(b-a+1)
+	n := g.randbtw(a, b)
 	s := make([]byte, n+1)
 	for i := 0; i < n; i++ {
 		s[i] = alpha[g.rnd.Intn(len(alpha))]

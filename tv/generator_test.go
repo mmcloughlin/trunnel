@@ -175,3 +175,22 @@ func TestLengthDoubleUse(t *testing.T) {
 		require.Len(t, b, 1+12*n)
 	}
 }
+
+func TestRemaining(t *testing.T) {
+	vs, err := String(`struct rem {
+		u32 head;
+		u8 tail[];
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"rem": []Vector{
+			{
+				Data: []byte{
+					0x72, 0xe8, 0x9f, 0x5b, 0xb4, 0x4b, 0x9f, 0xbb, 0x97, 0x1b,
+				},
+				Constraints: NewConstraints(),
+			},
+		},
+	}
+	assert.Equal(t, expect, vs)
+}
