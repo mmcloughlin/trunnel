@@ -1,37 +1,13 @@
 package tv
 
 import (
-	"errors"
-
 	"github.com/mmcloughlin/random"
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"
 	"github.com/mmcloughlin/trunnel/internal/intervals"
+	"github.com/pkg/errors"
 )
-
-// Constraints records fixed values for struct/context fields.
-type Constraints map[string]int64
-
-// NewConstraints builds an empty set of constraints.
-func NewConstraints() Constraints {
-	return Constraints{}
-}
-
-// Merge builds a new set of constraints by merging c and other. Errors on conflict.
-func (c Constraints) Merge(other Constraints) (Constraints, error) {
-	m := map[string]int64{}
-	for n, v := range c {
-		m[n] = v
-	}
-	for n, v := range other {
-		if w, exists := m[n]; exists && v != w {
-			return nil, errors.New("constraint conflict")
-		}
-		m[n] = v
-	}
-	return m, nil
-}
 
 // Vector is a test vector.
 type Vector struct {
@@ -117,6 +93,7 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 
 	v := map[string][]Vector{}
 	for _, s := range f.Structs {
+		g.constraints = NewConstraints()
 		v[s.Name], err = g.structure(s)
 		if err != nil {
 			return nil, err
@@ -128,7 +105,12 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 
 func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
 	n := len(s.Members)
-	vectors := []Vector{NewEmptyVector()}
+	vectors := []Vector{
+		{
+			Data:        []byte{},
+			Constraints: g.constraints.CloneGlobal(),
+		},
+	}
 	for i := n - 1; i >= 0; i-- {
 		extended := []Vector{}
 		for _, v := range vectors {
@@ -145,6 +127,7 @@ func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
 		}
 		vectors = extended
 	}
+	g.constraints.ClearLocal()
 	return vectors, nil
 }
 
@@ -166,12 +149,7 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 		return g.intType(f.Name, ast.U8)
 
 	case *ast.NulTermString:
-		return []Vector{
-			{
-				Data:        g.randnulterm(2, 20),
-				Constraints: g.constraints,
-			},
-		}, nil
+		return []Vector{g.vector(g.randnulterm(2, 20))}, nil
 
 	case *ast.StructRef:
 		s, ok := g.structs[t.Name]
@@ -183,6 +161,9 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 	case *ast.FixedArrayMember:
 		return g.array(t.Base, t.Size)
 
+	case *ast.VarArrayMember:
+		return g.array(t.Base, t.Constraint)
+
 	default:
 		return nil, fault.NewUnexpectedType(t)
 	}
@@ -191,7 +172,7 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 	var b []byte
 
-	switch x, ok := g.constraints[name]; {
+	switch x, ok := g.constraints.LookupLocal(name); {
 	case ok:
 		b = intbytes(x, t.Size)
 
@@ -207,20 +188,29 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 		b = g.randint(t.Size)
 	}
 
-	return []Vector{
-		{
-			Data:        b,
-			Constraints: g.constraints,
-		},
-	}, nil
+	return []Vector{g.vector(b)}, nil
 }
 
 func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, error) {
-	v := []Vector{NewEmptyVector()}
-	n, err := g.resolver.Integer(s)
-	if err != nil {
-		return nil, err
+	iv := g.vector([]byte{})
+	v := []Vector{iv}
+
+	var n int64
+	switch s := s.(type) {
+	case *ast.IntegerConstRef, *ast.IntegerLiteral:
+		i, err := g.resolver.Integer(s)
+		if err != nil {
+			return nil, err
+		}
+		n = i
+
+	case *ast.IDRef:
+		n = iv.Constraints.LookupOrCreateRef(s, int64(1+g.rnd.Intn(19)))
+
+	default:
+		return nil, fault.NewUnexpectedType(s)
 	}
+
 	for i := int64(0); i < n; i++ {
 		w, err := g.field(&ast.Field{Type: base})
 		if err != nil {
@@ -232,6 +222,14 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 		}
 	}
 	return v, nil
+}
+
+// vector builds vector with the current constraints.
+func (g *generator) vector(b []byte) Vector {
+	return Vector{
+		Data:        b,
+		Constraints: g.constraints,
+	}
 }
 
 // intervals builds intervals object from an integer list.

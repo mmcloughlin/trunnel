@@ -25,7 +25,7 @@ func TestIntType(t *testing.T) {
 		"color": []Vector{
 			{
 				Data:        []byte{0x7f, 0x8c, 0x53},
-				Constraints: map[string]int64{},
+				Constraints: NewConstraints(),
 			},
 		},
 	}
@@ -68,13 +68,13 @@ func TestNestedStruct(t *testing.T) {
 		"color": []Vector{
 			{
 				Data:        []byte{0x7f, 0x8c, 0x53},
-				Constraints: map[string]int64{},
+				Constraints: NewConstraints(),
 			},
 		},
 		"gradient": []Vector{
 			{
 				Data:        []byte{0x97, 0x1b, 0xbf, 0x64, 0xb1, 0x96},
-				Constraints: map[string]int64{},
+				Constraints: NewConstraints(),
 			},
 		},
 	}
@@ -97,7 +97,7 @@ func TestNulTerm(t *testing.T) {
 					'u', 'k', 'p', 't', 't', 0, // s
 					0x53, // post
 				},
-				Constraints: map[string]int64{},
+				Constraints: NewConstraints(),
 			},
 		},
 	}
@@ -122,5 +122,56 @@ func TestFixedArray(t *testing.T) {
 		require.NoError(t, err)
 		d := v["fixie"][0].Data
 		require.Len(t, d, 8+8+2*4+4*2+8*2+3*2)
+	}
+}
+
+func TestVarArray(t *testing.T) {
+	f, err := parse.String(`struct var { u16 n; u32 words[n]; };`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		v := vs["var"][0]
+		n := binary.BigEndian.Uint16(v.Data)
+		require.Len(t, v.Data, 2+4*int(n))
+	}
+}
+
+func TestNestedVar(t *testing.T) {
+	f, err := parse.String(`
+		struct var  { u16 n; u32 w[n]; };
+		struct nest { u16 n; struct var v[n]; };
+	`)
+	require.NoError(t, err)
+	for i := 0; i < 100; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		b := vs["nest"][0].Data
+
+		// should be able to follow the length fields to the end
+		n, b := binary.BigEndian.Uint16(b), b[2:]
+		for j := 0; j < int(n); j++ {
+			l := binary.BigEndian.Uint16(b)
+			skip := 2 + 4*int(l)
+			require.True(t, len(b) >= skip)
+			b = b[skip:]
+		}
+		require.Len(t, b, 0)
+	}
+}
+
+func TestLengthDoubleUse(t *testing.T) {
+	f, err := parse.String(`struct dbl {
+		u8 n;
+		u32 a[n];
+		u64 b[n];
+	};`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		b := vs["dbl"][0].Data
+		n := int(b[0])
+		require.Len(t, b, 1+12*n)
 	}
 }
