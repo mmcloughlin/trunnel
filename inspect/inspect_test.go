@@ -75,6 +75,12 @@ func TestNewResolverErrors(t *testing.T) {
 			},
 		},
 		&ast.File{
+			Contexts: []*ast.Context{
+				&ast.Context{Name: "a"},
+				&ast.Context{Name: "a"},
+			},
+		},
+		&ast.File{
 			Constants: []*ast.Constant{
 				&ast.Constant{Name: "a"},
 				&ast.Constant{Name: "a"},
@@ -102,6 +108,24 @@ func TestResolverStruct(t *testing.T) {
 	assert.Equal(t, &ast.Struct{Name: "b"}, s)
 
 	_, ok = r.Struct("idk")
+	assert.False(t, ok)
+}
+
+func TestResolverContext(t *testing.T) {
+	f := &ast.File{
+		Contexts: []*ast.Context{
+			&ast.Context{Name: "a"},
+			&ast.Context{Name: "b"},
+		},
+	}
+	r, err := NewResolver(f)
+	require.NoError(t, err)
+
+	c, ok := r.Context("b")
+	assert.True(t, ok)
+	assert.Equal(t, &ast.Context{Name: "b"}, c)
+
+	_, ok = r.Context("idk")
 	assert.False(t, ok)
 }
 
@@ -148,6 +172,74 @@ func TestResolverInteger(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			v, err := r.Integer(c.Int)
 			assert.Equal(t, c.Value, v)
+			assert.Equal(t, c.HasError, err != nil)
+		})
+	}
+}
+
+func TestResolverIntType(t *testing.T) {
+	s := &ast.Struct{
+		Name: "name",
+		Members: []ast.Member{
+			&ast.Field{Name: "a", Type: ast.U8},
+			&ast.Field{Name: "b", Type: ast.U16},
+			&ast.Field{Name: "c", Type: ast.U32},
+			&ast.Field{Name: "s", Type: &ast.NulTermString{}},
+		},
+	}
+	f := &ast.File{
+		Structs: []*ast.Struct{s},
+		Contexts: []*ast.Context{
+			&ast.Context{
+				Name: "ctx",
+				Members: []*ast.Field{
+					&ast.Field{Name: "a", Type: ast.U8},
+					&ast.Field{Name: "b", Type: ast.U16},
+					&ast.Field{Name: "c", Type: ast.U32},
+				},
+			},
+		},
+	}
+	r, err := NewResolver(f)
+	require.NoError(t, err)
+
+	cases := []struct {
+		Name     string
+		Ref      *ast.IDRef
+		IntType  *ast.IntType
+		HasError bool
+	}{
+		{
+			Name:    "local",
+			Ref:     &ast.IDRef{Name: "b"},
+			IntType: ast.U16,
+		},
+		{
+			Name:    "ctx",
+			Ref:     &ast.IDRef{Scope: "ctx", Name: "c"},
+			IntType: ast.U32,
+		},
+		{
+			Name:     "undefctx",
+			Ref:      &ast.IDRef{Scope: "what", Name: "c"},
+			HasError: true,
+		},
+		{
+			Name:     "undeffield",
+			Ref:      &ast.IDRef{Scope: "ctx", Name: "missing"},
+			HasError: true,
+		},
+		{
+			Name:     "notint",
+			Ref:      &ast.IDRef{Name: "s"},
+			HasError: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			i, err := r.IntType(c.Ref, s)
+			assert.Equal(t, c.IntType, i)
 			assert.Equal(t, c.HasError, err != nil)
 		})
 	}
