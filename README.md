@@ -6,6 +6,7 @@ for the Tor project](https://gitweb.torproject.org/trunnel.git).
 [![GoDoc Reference](http://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](http://godoc.org/github.com/mmcloughlin/trunnel)
 [![Build status](https://img.shields.io/travis/mmcloughlin/trunnel.svg?style=flat-square)](https://travis-ci.org/mmcloughlin/trunnel)
 [![Coverage](https://img.shields.io/coveralls/mmcloughlin/trunnel.svg?style=flat-square)](https://coveralls.io/r/mmcloughlin/trunnel)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mmcloughlin/trunnel?style=flat-square)](https://goreportcard.com/report/github.com/mmcloughlin/trunnel)
 
 ## Status
 
