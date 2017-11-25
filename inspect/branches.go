@@ -64,6 +64,7 @@ func (b *Branches) Lookup(x int64) (Branch, bool) {
 	return Branch{}, false
 }
 
+// All returns all branches.
 func (b *Branches) All() []Branch {
 	return b.branches
 }

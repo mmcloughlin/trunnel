@@ -63,12 +63,14 @@ func TestNewBranchesBadIntervals(t *testing.T) {
 	assert.EqualError(t, err, "constant undefined")
 }
 
-func TestBranchesLookup(t *testing.T) {
+func TestBranchesLookupAndAll(t *testing.T) {
 	branches := []Branch{
 		{Set: intervals.NewSet(intervals.Range(30, 45), intervals.Range(100, 300))},
 		{Set: intervals.NewSet(intervals.Range(10, 20), intervals.Single(1001))},
 	}
 	b := &Branches{branches: branches}
+
+	assert.Equal(t, branches, b.All())
 
 	cases := []struct {
 		X      int64
