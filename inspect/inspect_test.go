@@ -185,18 +185,18 @@ func TestResolverIntervals(t *testing.T) {
 	cases := []struct {
 		Name     string
 		List     *ast.IntegerList
-		Set      intervals.Set
+		Set      *intervals.Set
 		HasError bool
 	}{
 		{
 			Name: "basic",
 			List: ast.NewIntegerList(ast.NewIntegerRangeLiteral(4, 5)),
-			Set:  intervals.Set{intervals.Range(4, 5)},
+			Set:  intervals.NewSet(intervals.Range(4, 5)),
 		},
 		{
 			Name: "single",
 			List: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(42)),
-			Set:  intervals.Set{intervals.Single(42)},
+			Set:  intervals.NewSet(intervals.Single(42)),
 		},
 		{
 			Name: "multi",
@@ -204,10 +204,10 @@ func TestResolverIntervals(t *testing.T) {
 				ast.NewIntegerRangeLiteral(1, 10),
 				ast.NewIntegerRangeLiteral(100, 1000),
 			),
-			Set: intervals.Set{
+			Set: intervals.NewSet(
 				intervals.Range(1, 10),
 				intervals.Range(100, 1000),
-			},
+			),
 		},
 		{
 			Name: "overlaps",

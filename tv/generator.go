@@ -239,7 +239,7 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 
 	// build interval sets for each case
 	type branch struct {
-		set     intervals.Set
+		set     *intervals.Set
 		members []ast.Member
 	}
 	all := []branch{}
@@ -249,13 +249,13 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 			return nil, fault.ErrNotImplemented
 		}
 
-		i, err := g.resolver.Intervals(c.Case)
+		s, err := g.resolver.Intervals(c.Case)
 		if err != nil {
 			return nil, err
 		}
 
 		all = append(all, branch{
-			set:     i,
+			set:     s,
 			members: c.Members,
 		})
 	}
@@ -304,7 +304,7 @@ func (g *generator) vector(b []byte) Vector {
 	}
 }
 
-func (g *generator) randint(bits int) []byte {
+func (g *generator) randint(bits uint) []byte {
 	n := bits / 8
 	b := make([]byte, n)
 	if _, err := g.rnd.Read(b); err != nil {
@@ -330,10 +330,10 @@ func (g *generator) randnulterm(a, b int) []byte {
 	return s
 }
 
-func intbytes(x int64, bits int) []byte {
+func intbytes(x int64, bits uint) []byte {
 	n := bits / 8
 	b := make([]byte, n)
-	for i := 0; i < n; i++ {
+	for i := uint(0); i < n; i++ {
 		b[n-1-i] = byte(x)
 		x >>= 8
 	}

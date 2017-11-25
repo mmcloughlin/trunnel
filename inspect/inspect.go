@@ -109,27 +109,27 @@ func (r *Resolver) Integer(i ast.Integer) (int64, error) {
 }
 
 // Intervals builds an intervals object from an integer list.
-func (r *Resolver) Intervals(l *ast.IntegerList) (intervals.Set, error) {
-	s := make(intervals.Set, len(l.Ranges))
+func (r *Resolver) Intervals(l *ast.IntegerList) (*intervals.Set, error) {
+	is := make([]intervals.Interval, len(l.Ranges))
 	for i, rng := range l.Ranges {
 		lo, err := r.Integer(rng.Low)
 		if err != nil {
 			return nil, err
 		}
 		if rng.High == nil {
-			s[i] = intervals.Single(uint64(lo)) // XXX cast
+			is[i] = intervals.Single(uint64(lo)) // XXX cast
 			continue
 		}
 		hi, err := r.Integer(rng.High)
 		if err != nil {
 			return nil, err
 		}
-		s[i] = intervals.Range(uint64(lo), uint64(hi)) // XXX cast
+		is[i] = intervals.Range(uint64(lo), uint64(hi)) // XXX cast
 	}
-	if s.Overlaps() {
+	if intervals.Overlaps(is) {
 		return nil, errors.New("overlapping intervals")
 	}
-	return s, nil
+	return intervals.NewSet(is...), nil
 }
 
 // IntType looks up the integer type refered to by ref. The local struct is

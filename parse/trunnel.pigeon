@@ -385,7 +385,7 @@ CharType <- "char" {
 
 IntType <- 'u' b:("8" / "16" / "32" / "64") {
   s, err := strconv.Atoi(string(b.([]byte)))
-  return &ast.IntType{Size: s}, err
+  return &ast.IntType{Size: uint(s)}, err
 }
 
 //  OptIntConstraint ::=

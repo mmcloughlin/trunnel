@@ -73,7 +73,7 @@ type Type interface{}
 
 // IntType represents an integer type (u8, u16, u32 and u64).
 type IntType struct {
-	Size       int
+	Size       uint
 	Constraint *IntegerList
 }
 

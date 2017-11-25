@@ -61,7 +61,7 @@ func TestIntType(t *testing.T) {
 	assert.Equal(t, NewSet(Range(0, 127)), IntType(7))
 }
 
-func TestSetOverlaps(t *testing.T) {
+func TestOverlaps(t *testing.T) {
 	cases := []struct {
 		Intervals []Interval
 		Expect    bool
@@ -76,7 +76,7 @@ func TestSetOverlaps(t *testing.T) {
 	for _, c := range cases {
 		s := NewSet(c.Intervals...)
 		t.Run(s.String(), func(t *testing.T) {
-			assert.Equal(t, c.Expect, s.Overlaps())
+			assert.Equal(t, c.Expect, Overlaps(c.Intervals))
 		})
 	}
 }
@@ -114,7 +114,7 @@ func TestSetString(t *testing.T) {
 		},
 		{
 			Intervals: []Interval{Single(2), Range(4, 50), Range(30, 300)},
-			Expect:    "2,4-50,30-300",
+			Expect:    "2,4-300",
 		},
 	}
 	for _, c := range cases {

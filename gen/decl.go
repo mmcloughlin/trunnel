@@ -207,7 +207,7 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 
 func (g *generator) parseIntType(lhs string, t *ast.IntType) {
 	n := t.Size / 8
-	g.lengthCheck(strconv.Itoa(n))
+	g.lengthCheck(strconv.Itoa(int(n)))
 	if n == 1 {
 		g.printf("%s = %s[0]\n", lhs, g.data)
 	} else {
@@ -345,7 +345,7 @@ func (g *generator) tipe(t interface{}) string {
 	case *ast.NulTermString:
 		return "string"
 	case *ast.IntType:
-		return "uint" + strconv.Itoa(t.Size)
+		return fmt.Sprintf("uint%d", t.Size)
 	case *ast.CharType:
 		return "byte"
 	case *ast.Ptr:

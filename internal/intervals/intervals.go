@@ -57,14 +57,27 @@ func (i Interval) String() string {
 	}
 }
 
+// Overlaps returns true if any intervals overlap.
+func Overlaps(is []Interval) bool {
+	intersections := thresholds(0, 2, intervaledges(is))
+	return len(intersections) > 0
+}
+
 // Set is a collection of intervals.
 type Set struct {
 	intervals []Interval
 }
 
-// NewSet builds a set from the given intervals.
+// Simplify simplifies a set of intervals such that they cover the the same set
+// of integers in a minimal way.
+func Simplify(is []Interval) []Interval {
+	return thresholds(0, 1, intervaledges(is))
+}
+
+// NewSet builds a set from the union of given intervals. The intervals will be
+// passed through simplify.
 func NewSet(is ...Interval) *Set {
-	return &Set{intervals: is}
+	return &Set{intervals: Simplify(is)}
 }
 
 // IntType returns the set of possible values of an n-bit integer.
@@ -90,51 +103,51 @@ func (s Set) Contains(x uint64) bool {
 	return false
 }
 
-// Overlaps returns true if any intervals overlap.
-func (s Set) Overlaps() bool {
-	es := []edge{}
-	for _, i := range s.intervals {
-		es = append(es, edge{x: i.lo, d: 1})
-		es = append(es, edge{x: i.hi, d: -1})
-	}
-	sort.Sort(edges(es))
-	inside := 0
-	for _, e := range es {
-		inside += e.d
-		if inside > 1 {
-			return true
-		}
-	}
-	return false
-}
-
 // Subtract subtracts other from s.
 func (s *Set) Subtract(other *Set) {
-	es := []edge{}
-	for _, i := range s.intervals {
+	s.intervals = thresholds(1, 2, intervaledges(s.intervals), intervalcomplements(other.intervals))
+}
+
+func intervaledges(is []Interval) []edge {
+	es := edges{}
+	for _, i := range is {
 		es = append(es, edge{x: i.lo, d: 1})
 		es = append(es, edge{x: i.hi, d: -1})
 	}
-	for _, i := range other.intervals {
+	return es
+}
+
+func intervalcomplements(is []Interval) []edge {
+	es := edges{}
+	for _, i := range is {
 		es = append(es, edge{x: i.lo - 1, d: -1})
 		es = append(es, edge{x: i.hi + 1, d: 1})
 	}
+	return es
+}
+
+func thresholds(init, thresh int, edgesets ...[]edge) []Interval {
+	es := []edge{}
+	for _, e := range edgesets {
+		es = append(es, e...)
+	}
 	sort.Sort(edges(es))
-	n := 1
+	n := init
 	inside := false
 	result := []Interval{}
 	var start uint64
 	for _, e := range es {
 		n += e.d
-		if !inside && n >= 2 {
+		if !inside && n >= thresh {
 			start = e.x
 			inside = true
-		} else if inside && n < 2 {
+		} else if inside && n < thresh {
 			result = append(result, Range(start, e.x))
 			inside = false
 		}
 	}
-	s.intervals = result
+
+	return result
 }
 
 type edge struct {
