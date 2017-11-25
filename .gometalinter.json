@@ -2,7 +2,8 @@
   "EnableAll": true,
   "Skip": [
     "parse/internal/parser",
-    "gen/tests"
+    "gen/tests",
+    "internal/test"
   ],
   "LineLength": 120
 }

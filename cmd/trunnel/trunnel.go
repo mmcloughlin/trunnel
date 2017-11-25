@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log"
 	"os"
 
 	"github.com/mmcloughlin/trunnel/gen"
@@ -19,7 +20,9 @@ func main() {
 		build,
 	}
 
-	_ = app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // build command
@@ -28,7 +31,7 @@ var (
 
 	build = cli.Command{
 		Name:      "build",
-		Usage:     "generate go code from trunnel",
+		Usage:     "Generate go code from trunnel",
 		ArgsUsage: "trunnelfile",
 		Action: func(c *cli.Context) error {
 			filename := c.Args().First()

@@ -239,9 +239,32 @@ func TestTagDoubleUse(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		vs, err := Generate(f)
 		require.NoError(t, err)
-		b := vs["dbltag"][0].Data
-		tag := b[0]
-		require.True(t, tag == 1 || tag == 2)
-		require.Len(t, b, 1+2*int(tag)) // confirms same tag is used for both unions
+		require.Len(t, vs["dbltag"], 2)
+		for j, v := range vs["dbltag"] {
+			b := v.Data
+			tag := j + 1
+			require.Equal(t, byte(tag), b[0])
+			require.Len(t, b, 1+2*tag)
+		}
 	}
+}
+
+func TestUnionDefault(t *testing.T) {
+	vs, err := String(`struct basic {
+		u8 tag;
+		union u[tag] {
+			1:
+				u32 a;
+			default:
+				u8 ukn[];
+		};
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"basic": []Vector{
+			NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
+			NewVector([]byte{0x02, 0x1b, 0x97, 0xbf, 0x64, 0x53, 0x8c}),
+		},
+	}
+	assert.Equal(t, expect, vs)
 }

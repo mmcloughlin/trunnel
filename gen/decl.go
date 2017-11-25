@@ -37,7 +37,9 @@ type generator struct {
 }
 
 func (g *generator) printf(format string, a ...interface{}) {
-	fmt.Fprintf(g.w, format, a...)
+	if _, err := fmt.Fprintf(g.w, format, a...); err != nil {
+		panic(err) // XXX
+	}
 }
 
 func (g *generator) file(f *ast.File) error {

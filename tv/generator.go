@@ -249,9 +249,12 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 		return nil, fault.ErrNotImplemented
 	}
 
-	base := g.constraints.Clone()
-	results := []Vector{}
-
+	// build interval sets for each case
+	type branch struct {
+		set     intervals.Set
+		members []ast.Member
+	}
+	all := []branch{}
 	for _, c := range u.Cases {
 		// TODO(mbm): test vectors union with default case
 		if c.Case == nil {
@@ -263,10 +266,39 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 			return nil, err
 		}
 
-		t := i.Random()
+		all = append(all, branch{
+			set:     i,
+			members: c.Members,
+		})
+	}
+
+	// has the tag already been set?
+	var branches []branch
+	t, ok := g.constraints.LookupRef(u.Tag)
+	if ok {
+		for _, b := range all {
+			if b.set.Contains(uint64(t)) { // XXX cast
+				branches = []branch{b}
+				break
+			}
+		}
+	} else {
+		branches = all
+	}
+	if branches == nil {
+		return []Vector{}, nil
+	}
+
+	base := g.constraints.Clone()
+	results := []Vector{}
+
+	for _, b := range branches {
+		t := b.set.Random()
 		g.constraints = base.Clone()
-		g.constraints.SetRef(u.Tag, int64(t)) // XXX cast
-		vs, err := g.members([]Vector{g.vector([]byte{})}, c.Members)
+		if err := g.constraints.SetRef(u.Tag, int64(t)); err != nil { // XXX cast
+			return nil, err
+		}
+		vs, err := g.members([]Vector{g.vector([]byte{})}, b.members)
 		if err != nil {
 			return nil, err
 		}
