@@ -42,7 +42,6 @@ func cross(a, b []Vector) ([]Vector, error) {
 }
 
 type generator struct {
-	structs     map[string]*ast.Struct
 	resolver    *inspect.Resolver
 	constraints Constraints
 	rnd         random.Interface
@@ -69,20 +68,9 @@ func WithRandom(r random.Interface) Option {
 	}
 }
 
-func (g *generator) init(f *ast.File) error {
-	s, err := inspect.Structs(f)
-	if err != nil {
-		return err
-	}
-	g.structs = s
-
-	c, err := inspect.Constants(f)
-	if err != nil {
-		return err
-	}
-	g.resolver = inspect.NewResolver(c)
-
-	return nil
+func (g *generator) init(f *ast.File) (err error) {
+	g.resolver, err = inspect.NewResolver(f)
+	return
 }
 
 func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
@@ -165,7 +153,7 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 		return []Vector{g.vector(g.randnulterm(2, 20))}, nil
 
 	case *ast.StructRef:
-		s, ok := g.structs[t.Name]
+		s, ok := g.resolver.Struct(t.Name)
 		if !ok {
 			return nil, errors.New("could not resolve struct name")
 		}

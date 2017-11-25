@@ -35,17 +35,34 @@ func Constants(f *ast.File) (map[string]int64, error) {
 	return v, nil
 }
 
-// Resolver will resolve AST integers to actual integer values based on defined
-// constants.
+// Resolver maintains indexes of various parts of a trunnel file.
 type Resolver struct {
+	structs   map[string]*ast.Struct
 	constants map[string]int64
 }
 
-// NewResolver builds a resolver for the given constants mapping.
-func NewResolver(c map[string]int64) *Resolver {
-	return &Resolver{
-		constants: c,
+// NewResolver builds a resolver from the given file.
+func NewResolver(f *ast.File) (*Resolver, error) {
+	s, err := Structs(f)
+	if err != nil {
+		return nil, err
 	}
+
+	c, err := Constants(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Resolver{
+		structs:   s,
+		constants: c,
+	}, nil
+}
+
+// Struct returns the struct with the given name.
+func (r *Resolver) Struct(n string) (*ast.Struct, bool) {
+	s, ok := r.structs[n]
+	return s, ok
 }
 
 // Integer resolves i to an integer value.

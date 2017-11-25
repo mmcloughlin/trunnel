@@ -29,7 +29,6 @@ type generator struct {
 	pkg string
 	w   io.Writer
 
-	structs  map[string]*ast.Struct
 	resolver *inspect.Resolver
 
 	receiver string // method receiver variable
@@ -61,20 +60,9 @@ func (g *generator) file(f *ast.File) error {
 	return nil
 }
 
-func (g *generator) init(f *ast.File) error {
-	s, err := inspect.Structs(f)
-	if err != nil {
-		return err
-	}
-	g.structs = s
-
-	c, err := inspect.Constants(f)
-	if err != nil {
-		return err
-	}
-	g.resolver = inspect.NewResolver(c)
-
-	return nil
+func (g *generator) init(f *ast.File) (err error) {
+	g.resolver, err = inspect.NewResolver(f)
+	return
 }
 
 func (g *generator) context(c *ast.Context) {
@@ -199,7 +187,7 @@ func (g *generator) parseType(lhs string, t ast.Type) {
 	case *ast.StructRef:
 		g.printf("var err error\n")
 		g.printf("%s = new(%s)\n", lhs, name(t.Name))
-		s, ok := g.structs[t.Name]
+		s, ok := g.resolver.Struct(t.Name)
 		if !ok {
 			panic("struct not found") // XXX return err
 		}
