@@ -250,7 +250,6 @@ func TestTagDoubleUse(t *testing.T) {
 }
 
 func TestUnionDefault(t *testing.T) {
-	t.Skip() // XXX
 	vs, err := String(`struct basic {
 		u8 tag;
 		union u[tag] {
@@ -263,9 +262,26 @@ func TestUnionDefault(t *testing.T) {
 	require.NoError(t, err)
 	expect := map[string][]Vector{
 		"basic": []Vector{
-			NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
-			NewVector([]byte{0x02, 0x1b, 0x97, 0xbf, 0x64, 0x53, 0x8c}),
+			NewVector([]byte{0x01, 0x53, 0x8c, 0x7f, 0x96}),
+			NewVector([]byte{0x64, 0x84, 0x14, 0x5b, 0x9f, 0xe8, 0xbf, 0x64, 0xb1}),
 		},
 	}
 	assert.Equal(t, expect, vs)
+}
+
+func TestUnionDefaultRange(t *testing.T) {
+	f, err := parse.String(`struct basic {
+		u16 tag;
+		union u[tag] {
+			0..0x2ff: u8 a;
+			default: u8 ukn[];
+		};
+	};`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		require.True(t, binary.BigEndian.Uint16(vs["basic"][0].Data) <= uint16(0x2ff))
+		require.True(t, binary.BigEndian.Uint16(vs["basic"][1].Data) > uint16(0x2ff))
+	}
 }

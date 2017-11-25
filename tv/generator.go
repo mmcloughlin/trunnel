@@ -5,7 +5,6 @@ import (
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"
-	"github.com/mmcloughlin/trunnel/internal/intervals"
 	"github.com/pkg/errors"
 )
 
@@ -44,7 +43,9 @@ func cross(a, b []Vector) ([]Vector, error) {
 type generator struct {
 	resolver    *inspect.Resolver
 	constraints Constraints
-	rnd         random.Interface
+	strct       *ast.Struct
+
+	rnd random.Interface
 }
 
 // Generate generates a set of test vectors for the types defined in f.
@@ -92,6 +93,8 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 }
 
 func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
+	restore := g.strct
+	g.strct = s
 	vs := []Vector{
 		{
 			Data:        []byte{},
@@ -106,6 +109,7 @@ func (g *generator) structure(s *ast.Struct) ([]Vector, error) {
 	for _, v := range vs {
 		v.Constraints.ClearLocal()
 	}
+	g.strct = restore
 	return vs, nil
 }
 
@@ -237,56 +241,29 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 		return nil, fault.ErrNotImplemented
 	}
 
-	// build interval sets for each case
-	type branch struct {
-		set     *intervals.Set
-		members []ast.Member
-	}
-	all := []branch{}
-	for _, c := range u.Cases {
-		// TODO(mbm): test vectors union with default case
-		if c.Case == nil {
-			return nil, fault.ErrNotImplemented
-		}
-
-		s, err := g.resolver.Intervals(c.Case)
-		if err != nil {
-			return nil, err
-		}
-
-		all = append(all, branch{
-			set:     s,
-			members: c.Members,
-		})
+	branches, err := inspect.NewBranches(g.resolver, g.strct, u)
+	if err != nil {
+		return nil, err
 	}
 
 	// has the tag already been set?
-	var branches []branch
+	options := branches.All()
 	t, ok := g.constraints.LookupRef(u.Tag)
 	if ok {
-		for _, b := range all {
-			if b.set.Contains(uint64(t)) { // XXX cast
-				branches = []branch{b}
-				break
-			}
+		branch, ok := branches.Lookup(t)
+		if !ok {
+			return []Vector{}, nil
 		}
-	} else {
-		branches = all
-	}
-	if branches == nil {
-		return []Vector{}, nil
+		options = []inspect.Branch{branch}
 	}
 
 	base := g.constraints.Clone()
 	results := []Vector{}
 
-	for _, b := range branches {
-		t := b.set.Random()
+	for _, b := range options {
 		g.constraints = base.Clone()
-		if err := g.constraints.SetRef(u.Tag, int64(t)); err != nil { // XXX cast
-			return nil, err
-		}
-		vs, err := g.members([]Vector{g.vector([]byte{})}, b.members)
+		g.constraints.LookupOrCreateRef(u.Tag, int64(b.Set.Random())) // XXX cast
+		vs, err := g.members([]Vector{g.vector([]byte{})}, b.Case.Members)
 		if err != nil {
 			return nil, err
 		}
