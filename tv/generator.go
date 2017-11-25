@@ -147,6 +147,8 @@ func (g *generator) member(m ast.Member) ([]Vector, error) {
 		}, nil
 	case *ast.Fail:
 		return []Vector{}, nil
+	case *ast.EOS:
+		return []Vector{g.empty()}, nil
 	default:
 		return nil, fault.NewUnexpectedType(m)
 	}

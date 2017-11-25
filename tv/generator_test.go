@@ -326,3 +326,19 @@ func TestPtr(t *testing.T) {
 	}
 	assert.Equal(t, expect, vs)
 }
+
+func TestEOS(t *testing.T) {
+	vs, err := String(`struct haseos {
+		u8 r;
+		u8 g;
+		u8 b;
+		eos;
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"haseos": []Vector{
+			NewVector([]byte{0x7f, 0x8c, 0x53}),
+		},
+	}
+	assert.Equal(t, expect, vs)
+}
