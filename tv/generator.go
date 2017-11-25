@@ -82,6 +82,9 @@ func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
 
 	v := map[string][]Vector{}
 	for _, s := range f.Structs {
+		if s.Extern() {
+			continue
+		}
 		g.constraints = NewConstraints()
 		v[s.Name], err = g.structure(s)
 		if err != nil {

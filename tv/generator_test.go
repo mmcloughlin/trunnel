@@ -342,3 +342,10 @@ func TestEOS(t *testing.T) {
 	}
 	assert.Equal(t, expect, vs)
 }
+
+func TestExternStruct(t *testing.T) {
+	vs, err := String(`extern struct ext;`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{}
+	assert.Equal(t, expect, vs)
+}
