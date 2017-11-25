@@ -140,6 +140,13 @@ func (g *generator) member(m ast.Member) ([]Vector, error) {
 		return g.field(m)
 	case *ast.UnionMember:
 		return g.union(m)
+	case *ast.Ignore:
+		return []Vector{
+			g.empty(),
+			g.vector(g.randbytes(1, 7)),
+		}, nil
+	case *ast.Fail:
+		return []Vector{}, nil
 	default:
 		return nil, fault.NewUnexpectedType(m)
 	}
@@ -152,6 +159,9 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 
 	case *ast.CharType:
 		return g.intType(f.Name, ast.U8)
+
+	case *ast.Ptr:
+		return []Vector{g.empty()}, nil
 
 	case *ast.NulTermString:
 		return []Vector{g.vector(g.randnulterm(2, 20))}, nil
@@ -197,7 +207,7 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 }
 
 func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, error) {
-	iv := g.vector([]byte{})
+	iv := g.empty()
 	v := []Vector{iv}
 
 	var n int64
@@ -263,7 +273,7 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 	for _, b := range options {
 		g.constraints = base.Clone()
 		g.constraints.LookupOrCreateRef(u.Tag, int64(b.Set.Random())) // XXX cast
-		vs, err := g.members([]Vector{g.vector([]byte{})}, b.Case.Members)
+		vs, err := g.members([]Vector{g.empty()}, b.Case.Members)
 		if err != nil {
 			return nil, err
 		}
@@ -271,6 +281,11 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 	}
 
 	return results, nil
+}
+
+// empty returns an empty Vector with current constraints.
+func (g *generator) empty() Vector {
+	return g.vector([]byte{})
 }
 
 // vector builds vector with the current constraints.
@@ -282,17 +297,28 @@ func (g *generator) vector(b []byte) Vector {
 }
 
 func (g *generator) randint(bits uint) []byte {
-	n := bits / 8
-	b := make([]byte, n)
-	if _, err := g.rnd.Read(b); err != nil {
-		panic(err) // should never happen
-	}
+	b := make([]byte, bits/8)
+	g.randread(b)
 	return b
 }
 
 // randbtw generates an integer between a and b, inclusive.
 func (g *generator) randbtw(a, b int) int {
 	return a + g.rnd.Intn(b-a+1)
+}
+
+// randbytes returns a random byre array of length between a and b.
+func (g *generator) randbytes(a, b int) []byte {
+	d := make([]byte, g.randbtw(a, b))
+	g.randread(d)
+	return d
+}
+
+// randread reads random bytes into b from the configured random source.
+func (g *generator) randread(b []byte) {
+	if _, err := g.rnd.Read(b); err != nil {
+		panic(err) // should never happen
+	}
 }
 
 // randnulterm generates a random nul-terminated string of length in [a,b]

@@ -285,3 +285,44 @@ func TestUnionDefaultRange(t *testing.T) {
 		require.True(t, binary.BigEndian.Uint16(vs["basic"][1].Data) > uint16(0x2ff))
 	}
 }
+
+func TestUnionCommands(t *testing.T) {
+	vs, err := String(`struct basic {
+		u8 tag;
+		union u[tag] {
+			1: u32 a;
+			2..4: ; // empty
+			5: ignore;
+			default: fail;
+		};
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"basic": []Vector{
+			NewVector([]byte{0x01, 0x53, 0x8c, 0x7f, 0x96}),
+			NewVector([]byte{0x03}),
+			NewVector([]byte{0x05}),
+			NewVector([]byte{0x05, 0xb1, 0x64, 0xbf}),
+		},
+	}
+	assert.Equal(t, expect, vs)
+}
+
+func TestPtr(t *testing.T) {
+	vs, err := String(`struct haspos {
+		nulterm s;
+		@ptr pos1;
+		u32 after;
+	};`)
+	require.NoError(t, err)
+	expect := map[string][]Vector{
+		"haspos": []Vector{
+			NewVector([]byte{
+				'u', 'k', 'p', 't', 't', 0, // s
+				// pos1 occupies no space
+				0x53, 0x8c, 0x7f, 0x96, // after
+			}),
+		},
+	}
+	assert.Equal(t, expect, vs)
+}
