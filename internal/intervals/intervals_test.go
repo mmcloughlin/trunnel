@@ -1,6 +1,7 @@
 package intervals
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -18,6 +19,13 @@ func TestBadRange(t *testing.T) {
 
 func TestSingle(t *testing.T) {
 	assert.Equal(t, Interval{lo: 13, hi: 13}, Single(13))
+}
+
+func TestBits(t *testing.T) {
+	hi := ^uint64(0)
+	for n := uint(0); n <= 64; n++ {
+		assert.Equal(t, Interval{lo: 0, hi: hi >> n}, Bits(64-n))
+	}
 }
 
 func TestIntervalSize(t *testing.T) {
@@ -49,6 +57,10 @@ func TestIntervalContains(t *testing.T) {
 	}
 }
 
+func TestIntType(t *testing.T) {
+	assert.Equal(t, NewSet(Range(0, 127)), IntType(7))
+}
+
 func TestSetOverlaps(t *testing.T) {
 	cases := []struct {
 		Intervals []Interval
@@ -62,7 +74,7 @@ func TestSetOverlaps(t *testing.T) {
 		{[]Interval{Range(5, 10), Range(11, 15)}, false},
 	}
 	for _, c := range cases {
-		s := Set(c.Intervals)
+		s := NewSet(c.Intervals...)
 		t.Run(s.String(), func(t *testing.T) {
 			assert.Equal(t, c.Expect, s.Overlaps())
 		})
@@ -80,7 +92,7 @@ func TestSetContains(t *testing.T) {
 		{[]Interval{Single(1), Range(4, 5)}, 4, true},
 	}
 	for _, c := range cases {
-		s := Set(c.Intervals)
+		s := NewSet(c.Intervals...)
 		t.Run(s.String(), func(t *testing.T) {
 			assert.Equal(t, c.Expect, s.Contains(c.X))
 		})
@@ -106,19 +118,54 @@ func TestSetString(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		assert.Equal(t, c.Expect, Set(c.Intervals).String())
+		assert.Equal(t, c.Expect, NewSet(c.Intervals...).String())
+	}
+}
+
+func TestSubtract(t *testing.T) {
+	cases := []struct {
+		A      *Set
+		B      *Set
+		Expect *Set
+	}{
+		{
+			NewSet(Range(1, 10)),
+			NewSet(Range(5, 15)),
+			NewSet(Range(1, 4)),
+		},
+		{
+			NewSet(Range(50, 100)),
+			NewSet(Range(25, 75)),
+			NewSet(Range(76, 100)),
+		},
+		{
+			NewSet(Range(0, 4), Range(8, 12)),
+			NewSet(Range(2, 10)),
+			NewSet(Range(0, 1), Range(11, 12)),
+		},
+		{
+			NewSet(Range(50, 100)),
+			NewSet(Single(75)),
+			NewSet(Range(50, 74), Range(76, 100)),
+		},
+	}
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("(%s)-(%s)", c.A, c.B), func(t *testing.T) {
+			c.A.Subtract(c.B)
+			assert.Equal(t, c.Expect, c.A)
+		})
 	}
 }
 
 func TestSetRandomContains(t *testing.T) {
-	s := Set{Single(1), Range(42, 53), Range(100, 1000)}
+	s := NewSet(Single(1), Range(42, 53), Range(100, 1000))
 	for i := 0; i < NumTrials(); i++ {
 		require.True(t, s.Contains(s.Random()))
 	}
 }
 
 func TestSetRandomObserveAll(t *testing.T) {
-	s := Set{Single(1), Range(4200, 4201), Range(7, 10)}
+	s := NewSet(Single(1), Range(4200, 4201), Range(7, 10))
 	counts := map[uint64]int{}
 	for i := 0; i < NumTrials(); i++ {
 		r := s.Random()

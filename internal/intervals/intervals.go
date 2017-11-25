@@ -28,6 +28,11 @@ func Single(x uint64) Interval {
 	return Range(x, x)
 }
 
+// Bits returns the interval [0, 2^n-1].
+func Bits(n uint) Interval {
+	return Range(0, (1<<n)-1)
+}
+
 // Size returns the interval size.
 func (i Interval) Size() uint64 {
 	return i.hi - i.lo + 1
@@ -53,11 +58,23 @@ func (i Interval) String() string {
 }
 
 // Set is a collection of intervals.
-type Set []Interval
+type Set struct {
+	intervals []Interval
+}
+
+// NewSet builds a set from the given intervals.
+func NewSet(is ...Interval) *Set {
+	return &Set{intervals: is}
+}
+
+// IntType returns the set of possible values of an n-bit integer.
+func IntType(n uint) *Set {
+	return NewSet(Bits(n))
+}
 
 func (s Set) String() string {
 	is := []string{}
-	for _, i := range s {
+	for _, i := range s.intervals {
 		is = append(is, i.String())
 	}
 	return strings.Join(is, ",")
@@ -65,7 +82,7 @@ func (s Set) String() string {
 
 // Contains returns whether x is contained in the set.
 func (s Set) Contains(x uint64) bool {
-	for _, i := range s {
+	for _, i := range s.intervals {
 		if i.Contains(x) {
 			return true
 		}
@@ -76,7 +93,7 @@ func (s Set) Contains(x uint64) bool {
 // Overlaps returns true if any intervals overlap.
 func (s Set) Overlaps() bool {
 	es := []edge{}
-	for _, i := range s {
+	for _, i := range s.intervals {
 		es = append(es, edge{x: i.lo, d: 1})
 		es = append(es, edge{x: i.hi, d: -1})
 	}
@@ -89,6 +106,35 @@ func (s Set) Overlaps() bool {
 		}
 	}
 	return false
+}
+
+// Subtract subtracts other from s.
+func (s *Set) Subtract(other *Set) {
+	es := []edge{}
+	for _, i := range s.intervals {
+		es = append(es, edge{x: i.lo, d: 1})
+		es = append(es, edge{x: i.hi, d: -1})
+	}
+	for _, i := range other.intervals {
+		es = append(es, edge{x: i.lo - 1, d: -1})
+		es = append(es, edge{x: i.hi + 1, d: 1})
+	}
+	sort.Sort(edges(es))
+	n := 1
+	inside := false
+	result := []Interval{}
+	var start uint64
+	for _, e := range es {
+		n += e.d
+		if !inside && n >= 2 {
+			start = e.x
+			inside = true
+		} else if inside && n < 2 {
+			result = append(result, Range(start, e.x))
+			inside = false
+		}
+	}
+	s.intervals = result
 }
 
 type edge struct {
@@ -109,7 +155,7 @@ func (e edges) Less(i, j int) bool {
 // Random returns a random element of the collection. Assumes the collection
 // contains non-overlapping intervals. Panics if s is empty.
 func (s Set) Random() uint64 {
-	if len(s) == 0 {
+	if len(s.intervals) == 0 {
 		panic("empty set")
 	}
 	type step struct {
@@ -118,7 +164,7 @@ func (s Set) Random() uint64 {
 	}
 	steps := []step{}
 	var cuml uint64
-	for _, i := range s {
+	for _, i := range s.intervals {
 		cuml += i.Size()
 		steps = append(steps, step{
 			upper: cuml,
