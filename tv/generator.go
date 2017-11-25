@@ -251,11 +251,6 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 }
 
 func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
-	// TODO(mbm): test vectors for length-constrained unions
-	if u.Length != nil {
-		return nil, fault.ErrNotImplemented
-	}
-
 	branches, err := inspect.NewBranches(g.resolver, g.strct, u)
 	if err != nil {
 		return nil, err
@@ -283,6 +278,34 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 			return nil, err
 		}
 		results = append(results, vs...)
+	}
+
+	// set length constraint
+	if u.Length != nil {
+		return g.lenconstrain(u.Length, results)
+	}
+
+	return results, nil
+}
+
+func (g *generator) lenconstrain(c ast.LengthConstraint, vs []Vector) ([]Vector, error) {
+	r, ok := c.(*ast.IDRef)
+	if !ok {
+		return nil, fault.ErrNotImplemented
+	}
+
+	results := []Vector{}
+	for _, v := range vs {
+		n := int64(len(v.Data))
+		cst := v.Constraints.Clone()
+		m := cst.LookupOrCreateRef(r, n)
+		if m != n {
+			continue
+		}
+		results = append(results, Vector{
+			Data:        v.Data,
+			Constraints: cst,
+		})
 	}
 
 	return results, nil

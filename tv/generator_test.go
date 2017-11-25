@@ -387,3 +387,26 @@ func TestUnionContext(t *testing.T) {
 		}
 	}
 }
+
+func TestUnionLength(t *testing.T) {
+	f, err := parse.String(`struct union_with_len {
+		u16 tag;
+		u16 union_len;
+		union u[tag] with length union_len {
+			1: u8 r; u8 g; u8 b;
+			2: u16 year; u8 month; u8 day; ...;
+			default: u8 unparseable[];
+		};
+		u16 right_after_the_union;
+	};`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		require.Len(t, vs["union_with_len"], 4)
+		for _, v := range vs["union_with_len"] {
+			n := binary.BigEndian.Uint16(v.Data[2:])
+			require.Len(t, v.Data, 6+int(n))
+		}
+	}
+}
