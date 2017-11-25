@@ -349,3 +349,41 @@ func TestExternStruct(t *testing.T) {
 	expect := map[string][]Vector{}
 	assert.Equal(t, expect, vs)
 }
+
+func TestVarArrayContext(t *testing.T) {
+	f, err := parse.String(`
+		context ctx { u16 n; }
+		struct var with context ctx { u32 words[ctx.n]; };
+	`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		v := vs["var"][0]
+		n, ok := v.Constraints.Lookup("ctx", "n")
+		require.True(t, ok)
+		require.Len(t, v.Data, 4*int(n))
+	}
+}
+
+func TestUnionContext(t *testing.T) {
+	f, err := parse.String(`
+	context ctx { u16 tag; }
+	struct basic with context ctx {
+		union u[ctx.tag] {
+			1: u8 a;
+			2: u16 b;
+			4: u32 c;
+		};
+	};`)
+	require.NoError(t, err)
+	for i := 0; i < 1000; i++ {
+		vs, err := Generate(f)
+		require.NoError(t, err)
+		for _, v := range vs["basic"] {
+			tag, ok := v.Constraints.Lookup("ctx", "tag")
+			require.True(t, ok)
+			require.Len(t, v.Data, int(tag))
+		}
+	}
+}
