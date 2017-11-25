@@ -178,7 +178,7 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 		b = intbytes(x, t.Size)
 
 	case t.Constraint != nil:
-		s, err := g.intervals(t.Constraint)
+		s, err := g.resolver.Intervals(t.Constraint)
 		if err != nil {
 			return nil, err
 		}
@@ -249,7 +249,7 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 			return nil, fault.ErrNotImplemented
 		}
 
-		i, err := g.intervals(c.Case)
+		i, err := g.resolver.Intervals(c.Case)
 		if err != nil {
 			return nil, err
 		}
@@ -302,30 +302,6 @@ func (g *generator) vector(b []byte) Vector {
 		Data:        b,
 		Constraints: g.constraints,
 	}
-}
-
-// intervals builds intervals object from an integer list.
-func (g *generator) intervals(l *ast.IntegerList) (intervals.Set, error) {
-	s := make(intervals.Set, len(l.Ranges))
-	for i, r := range l.Ranges {
-		lo, err := g.resolver.Integer(r.Low)
-		if err != nil {
-			return nil, err
-		}
-		if r.High == nil {
-			s[i] = intervals.Single(uint64(lo)) // XXX cast
-			continue
-		}
-		hi, err := g.resolver.Integer(r.High)
-		if err != nil {
-			return nil, err
-		}
-		s[i] = intervals.Range(uint64(lo), uint64(hi)) // XXX cast
-	}
-	if s.Overlaps() {
-		return nil, errors.New("overlapping intervals")
-	}
-	return s, nil
 }
 
 func (g *generator) randint(bits int) []byte {

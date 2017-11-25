@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/mmcloughlin/trunnel/ast"
+	"github.com/mmcloughlin/trunnel/internal/intervals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -172,6 +173,77 @@ func TestResolverInteger(t *testing.T) {
 		t.Run(c.Name, func(t *testing.T) {
 			v, err := r.Integer(c.Int)
 			assert.Equal(t, c.Value, v)
+			assert.Equal(t, c.HasError, err != nil)
+		})
+	}
+}
+
+func TestResolverIntervals(t *testing.T) {
+	r, err := NewResolver(&ast.File{})
+	require.NoError(t, err)
+
+	cases := []struct {
+		Name     string
+		List     *ast.IntegerList
+		Set      intervals.Set
+		HasError bool
+	}{
+		{
+			Name: "basic",
+			List: ast.NewIntegerList(ast.NewIntegerRangeLiteral(4, 5)),
+			Set:  intervals.Set{intervals.Range(4, 5)},
+		},
+		{
+			Name: "single",
+			List: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(42)),
+			Set:  intervals.Set{intervals.Single(42)},
+		},
+		{
+			Name: "multi",
+			List: ast.NewIntegerList(
+				ast.NewIntegerRangeLiteral(1, 10),
+				ast.NewIntegerRangeLiteral(100, 1000),
+			),
+			Set: intervals.Set{
+				intervals.Range(1, 10),
+				intervals.Range(100, 1000),
+			},
+		},
+		{
+			Name: "overlaps",
+			List: ast.NewIntegerList(
+				ast.NewIntegerRangeLiteral(1, 10),
+				ast.NewIntegerRangeLiteral(5, 14),
+			),
+			HasError: true,
+		},
+		{
+			Name: "lownil",
+			List: &ast.IntegerList{
+				Ranges: []*ast.IntegerRange{
+					&ast.IntegerRange{Low: nil},
+				},
+			},
+			HasError: true,
+		},
+		{
+			Name: "highbadtype",
+			List: &ast.IntegerList{
+				Ranges: []*ast.IntegerRange{
+					&ast.IntegerRange{
+						Low:  &ast.IntegerLiteral{Value: 3},
+						High: &ast.File{},
+					},
+				},
+			},
+			HasError: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			s, err := r.Intervals(c.List)
+			assert.Equal(t, c.Set, s)
 			assert.Equal(t, c.HasError, err != nil)
 		})
 	}

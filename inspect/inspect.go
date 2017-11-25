@@ -6,6 +6,7 @@ import (
 
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
+	"github.com/mmcloughlin/trunnel/internal/intervals"
 )
 
 // Structs builds a name to struct mapping for all structs in the file.
@@ -105,6 +106,30 @@ func (r *Resolver) Integer(i ast.Integer) (int64, error) {
 	default:
 		return 0, fault.NewUnexpectedType(i)
 	}
+}
+
+// Intervals builds an intervals object from an integer list.
+func (r *Resolver) Intervals(l *ast.IntegerList) (intervals.Set, error) {
+	s := make(intervals.Set, len(l.Ranges))
+	for i, rng := range l.Ranges {
+		lo, err := r.Integer(rng.Low)
+		if err != nil {
+			return nil, err
+		}
+		if rng.High == nil {
+			s[i] = intervals.Single(uint64(lo)) // XXX cast
+			continue
+		}
+		hi, err := r.Integer(rng.High)
+		if err != nil {
+			return nil, err
+		}
+		s[i] = intervals.Range(uint64(lo), uint64(hi)) // XXX cast
+	}
+	if s.Overlaps() {
+		return nil, errors.New("overlapping intervals")
+	}
+	return s, nil
 }
 
 // IntType looks up the integer type refered to by ref. The local struct is
