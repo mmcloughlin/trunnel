@@ -2,6 +2,7 @@ package intervals
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 
@@ -148,12 +149,46 @@ func TestSubtract(t *testing.T) {
 			NewSet(Single(75)),
 			NewSet(Range(50, 74), Range(76, 100)),
 		},
+		{
+			IntType(8),
+			IntType(4),
+			NewSet(Range(16, 255)),
+		},
+		{
+			IntType(64),
+			IntType(32),
+			NewSet(Range(1<<32, math.MaxUint64)),
+		},
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("(%s)-(%s)", c.A, c.B), func(t *testing.T) {
 			c.A.Subtract(c.B)
 			assert.Equal(t, c.Expect, c.A)
 		})
+	}
+}
+
+func TestComplement(t *testing.T) {
+	cases := []struct {
+		Intervals []Interval
+		Expect    []Interval
+	}{
+		{},
+		{
+			Intervals: []Interval{Range(10, 20)},
+			Expect:    []Interval{OpenLeft(9), OpenRight(21)},
+		},
+		{
+			Intervals: []Interval{OpenLeft(42)},
+			Expect:    []Interval{OpenRight(43)},
+		},
+		{
+			Intervals: []Interval{OpenRight(42)},
+			Expect:    []Interval{OpenLeft(41)},
+		},
+	}
+	for _, c := range cases {
+		assert.Equal(t, c.Expect, complement(c.Intervals))
 	}
 }
 

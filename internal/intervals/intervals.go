@@ -3,6 +3,7 @@ package intervals
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"sort"
 	"strconv"
@@ -33,6 +34,16 @@ func Bits(n uint) Interval {
 	return Range(0, (1<<n)-1)
 }
 
+// OpenLeft returns the interval [0, h].
+func OpenLeft(h uint64) Interval {
+	return Range(0, h)
+}
+
+// OpenRight returns the interval [l, 2^64-1].
+func OpenRight(l uint64) Interval {
+	return Range(l, math.MaxUint64)
+}
+
 // Size returns the interval size.
 func (i Interval) Size() uint64 {
 	return i.hi - i.lo + 1
@@ -59,7 +70,7 @@ func (i Interval) String() string {
 
 // Overlaps returns true if any intervals overlap.
 func Overlaps(is []Interval) bool {
-	intersections := thresholds(0, 2, intervaledges(is))
+	intersections := thresholds(2, is)
 	return len(intersections) > 0
 }
 
@@ -71,7 +82,7 @@ type Set struct {
 // Simplify simplifies a set of intervals such that they cover the the same set
 // of integers in a minimal way.
 func Simplify(is []Interval) []Interval {
-	return thresholds(0, 1, intervaledges(is))
+	return thresholds(1, is)
 }
 
 // NewSet builds a set from the union of given intervals. The intervals will be
@@ -105,7 +116,24 @@ func (s Set) Contains(x uint64) bool {
 
 // Subtract subtracts other from s.
 func (s *Set) Subtract(other *Set) {
-	s.intervals = thresholds(1, 2, intervaledges(s.intervals), intervalcomplements(other.intervals))
+	s.intervals = thresholds(2, s.intervals, complement(other.intervals))
+}
+
+// complement returns the "complement" of the intervals. In our case this is the
+// result of subtracting from the full 64-bit interval.
+func complement(is []Interval) []Interval {
+	s := uint64(0)
+	var c []Interval
+	for _, i := range is {
+		if i.lo > s {
+			c = append(c, Range(s, i.lo-1))
+		}
+		s = i.hi + 1
+	}
+	if s != 0 {
+		c = append(c, OpenRight(s))
+	}
+	return c
 }
 
 func intervaledges(is []Interval) []edge {
@@ -117,22 +145,13 @@ func intervaledges(is []Interval) []edge {
 	return es
 }
 
-func intervalcomplements(is []Interval) []edge {
-	es := edges{}
-	for _, i := range is {
-		es = append(es, edge{x: i.lo - 1, d: -1})
-		es = append(es, edge{x: i.hi + 1, d: 1})
-	}
-	return es
-}
-
-func thresholds(init, thresh int, edgesets ...[]edge) []Interval {
+func thresholds(thresh int, intervalsets ...[]Interval) []Interval {
 	es := []edge{}
-	for _, e := range edgesets {
-		es = append(es, e...)
+	for _, is := range intervalsets {
+		es = append(es, intervaledges(is)...)
 	}
 	sort.Sort(edges(es))
-	n := init
+	n := 0
 	inside := false
 	result := []Interval{}
 	var start uint64
