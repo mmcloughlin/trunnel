@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/mmcloughlin/trunnel/ast"
+	"github.com/mmcloughlin/trunnel/internal/intervals"
 	"github.com/mmcloughlin/trunnel/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,6 +61,34 @@ func TestNewBranchesBadIntervals(t *testing.T) {
 		};
 	};`)
 	assert.EqualError(t, err, "constant undefined")
+}
+
+func TestBranchesLookup(t *testing.T) {
+	branches := []Branch{
+		{Set: intervals.NewSet(intervals.Range(30, 45), intervals.Range(100, 300))},
+		{Set: intervals.NewSet(intervals.Range(10, 20), intervals.Single(1001))},
+	}
+	b := &Branches{branches: branches}
+
+	cases := []struct {
+		X      int64
+		Branch Branch
+		OK     bool
+	}{
+		{40, branches[0], true},
+		{45, branches[0], true},
+		{200, branches[0], true},
+		{10, branches[1], true},
+		{15, branches[1], true},
+		{1001, branches[1], true},
+		{10000, Branch{}, false},
+		{46, Branch{}, false},
+	}
+	for _, c := range cases {
+		branch, ok := b.Lookup(c.X)
+		assert.Equal(t, c.Branch, branch)
+		assert.Equal(t, c.OK, ok)
+	}
 }
 
 func BuildBranches(t *testing.T, code string) *Branches {

@@ -53,3 +53,13 @@ func NewBranches(r *Resolver, s *ast.Struct, u *ast.UnionMember) (*Branches, err
 
 	return b, nil
 }
+
+// Lookup fetches the branch x falls into.
+func (b *Branches) Lookup(x int64) (Branch, bool) {
+	for _, branch := range b.branches {
+		if branch.Set.Contains(uint64(x)) { // XXX cast
+			return branch, true
+		}
+	}
+	return Branch{}, false
+}
