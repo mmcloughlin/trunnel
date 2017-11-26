@@ -1,9 +1,32 @@
 {
-  "EnableAll": true,
-  "Skip": [
-    "parse/internal/parser",
-    "gen/tests",
-    "internal/test"
-  ],
-  "LineLength": 120
+    "Enable": [
+        "deadcode",
+        "errcheck",
+        "gas",
+        "goconst",
+        "gocyclo",
+        "gotype",
+        "ineffassign",
+        "interfacer",
+        "megacheck",
+        "structcheck",
+        "unconvert",
+        "varcheck",
+        "vetshadow",
+        "vet",
+        "errcheck",
+        "golint",
+        "lll",
+        "gofmt",
+        "goimports",
+        "misspell",
+        "gosimple",
+        "nakedret"
+    ],
+    "Skip": [
+        "parse/internal/parser",
+        "gen/tests",
+        "internal/test"
+    ],
+    "LineLength": 120
 }
