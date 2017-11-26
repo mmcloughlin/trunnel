@@ -50,6 +50,11 @@ type generator struct {
 
 // Generate generates a set of test vectors for the types defined in f.
 func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
+	return GenerateFiles([]*ast.File{f}, opts...)
+}
+
+// GenerateFiles generates test vectors for the types in the given files.
+func GenerateFiles(fs []*ast.File, opts ...Option) (map[string][]Vector, error) {
 	g := &generator{
 		selector: Exhaustive,
 		rnd:      random.New(),
@@ -57,7 +62,7 @@ func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
 	for _, opt := range opts {
 		opt(g)
 	}
-	return g.file(f)
+	return g.files(fs)
 }
 
 // Option is an option to control test vector generation.
@@ -77,26 +82,28 @@ func WithRandom(r random.Interface) Option {
 	}
 }
 
-func (g *generator) init(f *ast.File) (err error) {
-	g.resolver, err = inspect.NewResolver(f)
+func (g *generator) init(fs []*ast.File) (err error) {
+	g.resolver, err = inspect.NewResolverFiles(fs)
 	return
 }
 
-func (g *generator) file(f *ast.File) (map[string][]Vector, error) {
-	err := g.init(f)
+func (g *generator) files(fs []*ast.File) (map[string][]Vector, error) {
+	err := g.init(fs)
 	if err != nil {
 		return nil, err
 	}
 
 	v := map[string][]Vector{}
-	for _, s := range f.Structs {
-		if s.Extern() {
-			continue
-		}
-		g.constraints = NewConstraints()
-		v[s.Name], err = g.structure(s)
-		if err != nil {
-			return nil, err
+	for _, f := range fs {
+		for _, s := range f.Structs {
+			if s.Extern() {
+				continue
+			}
+			g.constraints = NewConstraints()
+			v[s.Name], err = g.structure(s)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

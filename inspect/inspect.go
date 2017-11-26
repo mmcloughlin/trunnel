@@ -67,9 +67,16 @@ func NewResolverEmpty() *Resolver {
 
 // NewResolver builds a resolver from the given file.
 func NewResolver(f *ast.File) (*Resolver, error) {
+	return NewResolverFiles([]*ast.File{f})
+}
+
+// NewResolverFiles builds a resolver from the given files.
+func NewResolverFiles(fs []*ast.File) (*Resolver, error) {
 	r := NewResolverEmpty()
-	if err := r.AddFile(f); err != nil {
-		return nil, err
+	for _, f := range fs {
+		if err := r.AddFile(f); err != nil {
+			return nil, err
+		}
 	}
 	return r, nil
 }
@@ -124,6 +131,15 @@ func (r *Resolver) AddStruct(s *ast.Struct) error {
 func (r *Resolver) Struct(n string) (*ast.Struct, bool) {
 	s, ok := r.structs[n]
 	return s, ok
+}
+
+// Structs returns all the structs in the resolver.
+func (r *Resolver) Structs() []*ast.Struct {
+	structs := make([]*ast.Struct, 0, len(r.structs))
+	for _, s := range r.structs {
+		structs = append(structs, s)
+	}
+	return structs
 }
 
 // StructNonExtern returns the non-extern struct with the given name.
