@@ -230,7 +230,7 @@ func (r *Resolver) Intervals(l *ast.IntegerList) (*intervals.Set, error) {
 	return intervals.NewSet(is...), nil
 }
 
-// IntType looks up the integer type refered to by ref. The local struct is
+// IntType looks up the integer type referred to by ref. The local struct is
 // required to resolve references to fields within the struct.
 func (r *Resolver) IntType(ref *ast.IDRef, local *ast.Struct) (*ast.IntType, error) {
 	var fs []*ast.Field

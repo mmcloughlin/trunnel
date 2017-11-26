@@ -133,7 +133,8 @@ func (g *generator) parseConstructor(s *ast.Struct) {
 
 // parse generates a parse function for the type.
 func (g *generator) parse(s *ast.Struct) {
-	g.printf("func (%s *%s) Parse(data []byte%s) ([]byte, error) {\n", g.receiver, name(s.Name), contextSignature(s.Contexts))
+	g.printf("func (%s *%s) Parse(data []byte%s) ([]byte, error) {\n",
+		g.receiver, name(s.Name), contextSignature(s.Contexts))
 	g.printf("cur := data\n")
 	g.data = "cur"
 	for _, m := range s.Members {
