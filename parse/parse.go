@@ -16,6 +16,19 @@ func File(filename string) (*ast.File, error) {
 	return cast(parser.ParseFile(filename))
 }
 
+// Files is a convenience for parsing multiple files.
+func Files(filenames []string) ([]*ast.File, error) {
+	fs := make([]*ast.File, len(filenames))
+	for i, filename := range filenames {
+		f, err := File(filename)
+		if err != nil {
+			return nil, err
+		}
+		fs[i] = f
+	}
+	return fs, nil
+}
+
 // Reader parses the data from r using filename as information in
 // error messages.
 func Reader(filename string, r io.Reader) (*ast.File, error) {
