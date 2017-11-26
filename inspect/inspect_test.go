@@ -112,6 +112,34 @@ func TestResolverStruct(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestResolverStructNonExtern(t *testing.T) {
+	f := &ast.File{
+		Structs: []*ast.Struct{
+			&ast.Struct{
+				Name: "a",
+				Members: []ast.Member{
+					&ast.Field{Name: "x", Type: ast.U16},
+				},
+			},
+			&ast.Struct{
+				Name:    "b",
+				Members: nil, // extern
+			},
+		},
+	}
+	r, err := NewResolver(f)
+	require.NoError(t, err)
+
+	_, err = r.StructNonExtern("a")
+	assert.NoError(t, err)
+
+	_, err = r.StructNonExtern("b")
+	assert.EqualError(t, err, "struct is external")
+
+	_, err = r.StructNonExtern("c")
+	assert.EqualError(t, err, "struct not found")
+}
+
 func TestResolverContext(t *testing.T) {
 	f := &ast.File{
 		Contexts: []*ast.Context{

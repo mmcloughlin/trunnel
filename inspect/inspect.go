@@ -80,10 +80,23 @@ func NewResolver(f *ast.File) (*Resolver, error) {
 	}, nil
 }
 
-// Struct returns the struct with the given name.
+// Struct returns the struct with the given name. Inlcudes extern struct
+// declarations.
 func (r *Resolver) Struct(n string) (*ast.Struct, bool) {
 	s, ok := r.structs[n]
 	return s, ok
+}
+
+// StructNonExtern returns the non-extern struct with the given name.
+func (r *Resolver) StructNonExtern(n string) (*ast.Struct, error) {
+	s, ok := r.Struct(n)
+	if !ok {
+		return nil, errors.New("struct not found")
+	}
+	if s.Extern() {
+		return nil, errors.New("struct is external")
+	}
+	return s, nil
 }
 
 // Context returns the context with the given name.
