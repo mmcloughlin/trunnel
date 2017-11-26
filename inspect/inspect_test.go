@@ -12,26 +12,26 @@ import (
 func TestStructs(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{Name: "a"},
-			&ast.Struct{Name: "b"},
-			&ast.Struct{Name: "c"},
+			{Name: "a"},
+			{Name: "b"},
+			{Name: "c"},
 		},
 	}
 	s, err := Structs(f)
 	require.NoError(t, err)
 	assert.Equal(t, map[string]*ast.Struct{
-		"a": &ast.Struct{Name: "a"},
-		"b": &ast.Struct{Name: "b"},
-		"c": &ast.Struct{Name: "c"},
+		"a": {Name: "a"},
+		"b": {Name: "b"},
+		"c": {Name: "c"},
 	}, s)
 }
 
 func TestStructsDupe(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{Name: "a"},
-			&ast.Struct{Name: "b"},
-			&ast.Struct{Name: "a"},
+			{Name: "a"},
+			{Name: "b"},
+			{Name: "a"},
 		},
 	}
 	_, err := Structs(f)
@@ -41,9 +41,9 @@ func TestStructsDupe(t *testing.T) {
 func TestConstants(t *testing.T) {
 	f := &ast.File{
 		Constants: []*ast.Constant{
-			&ast.Constant{Name: "a", Value: 1},
-			&ast.Constant{Name: "b", Value: 2},
-			&ast.Constant{Name: "c", Value: 3},
+			{Name: "a", Value: 1},
+			{Name: "b", Value: 2},
+			{Name: "c", Value: 3},
 		},
 	}
 	v, err := Constants(f)
@@ -58,9 +58,9 @@ func TestConstants(t *testing.T) {
 func TestConstantsDupe(t *testing.T) {
 	f := &ast.File{
 		Constants: []*ast.Constant{
-			&ast.Constant{Name: "a"},
-			&ast.Constant{Name: "b"},
-			&ast.Constant{Name: "a"},
+			{Name: "a"},
+			{Name: "b"},
+			{Name: "a"},
 		},
 	}
 	_, err := Constants(f)
@@ -69,22 +69,22 @@ func TestConstantsDupe(t *testing.T) {
 
 func TestNewResolverErrors(t *testing.T) {
 	files := []*ast.File{
-		&ast.File{
+		{
 			Structs: []*ast.Struct{
-				&ast.Struct{Name: "a"},
-				&ast.Struct{Name: "a"},
+				{Name: "a"},
+				{Name: "a"},
 			},
 		},
-		&ast.File{
+		{
 			Contexts: []*ast.Context{
-				&ast.Context{Name: "a"},
-				&ast.Context{Name: "a"},
+				{Name: "a"},
+				{Name: "a"},
 			},
 		},
-		&ast.File{
+		{
 			Constants: []*ast.Constant{
-				&ast.Constant{Name: "a"},
-				&ast.Constant{Name: "a"},
+				{Name: "a"},
+				{Name: "a"},
 			},
 		},
 	}
@@ -96,14 +96,14 @@ func TestNewResolverErrors(t *testing.T) {
 
 func TestResolverAddFileErrors(t *testing.T) {
 	files := []*ast.File{
-		&ast.File{
+		{
 			Structs: []*ast.Struct{
-				&ast.Struct{Name: "a", Members: []ast.Member{
+				{Name: "a", Members: []ast.Member{
 					&ast.Field{Name: "x", Type: ast.U8},
 				}},
 			}},
-		&ast.File{Contexts: []*ast.Context{&ast.Context{Name: "a"}}},
-		&ast.File{Constants: []*ast.Constant{&ast.Constant{Name: "a"}}},
+		{Contexts: []*ast.Context{{Name: "a"}}},
+		{Constants: []*ast.Constant{{Name: "a"}}},
 	}
 	for _, f := range files {
 		r := NewResolverEmpty()
@@ -144,8 +144,8 @@ func TestResolverAddStructOverrideExtern(t *testing.T) {
 func TestResolverStruct(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{Name: "a"},
-			&ast.Struct{Name: "b"},
+			{Name: "a"},
+			{Name: "b"},
 		},
 	}
 	r, err := NewResolver(f)
@@ -162,13 +162,13 @@ func TestResolverStruct(t *testing.T) {
 func TestResolverStructNonExtern(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{
+			{
 				Name: "a",
 				Members: []ast.Member{
 					&ast.Field{Name: "x", Type: ast.U16},
 				},
 			},
-			&ast.Struct{
+			{
 				Name:    "b",
 				Members: nil, // extern
 			},
@@ -205,8 +205,8 @@ func TestResolverAddContext(t *testing.T) {
 func TestResolverContext(t *testing.T) {
 	f := &ast.File{
 		Contexts: []*ast.Context{
-			&ast.Context{Name: "a"},
-			&ast.Context{Name: "b"},
+			{Name: "a"},
+			{Name: "b"},
 		},
 	}
 	r, err := NewResolver(f)
@@ -259,9 +259,9 @@ func TestResolverSetConstantOverride(t *testing.T) {
 func TestResolverInteger(t *testing.T) {
 	f := &ast.File{
 		Constants: []*ast.Constant{
-			&ast.Constant{Name: "a", Value: 1},
-			&ast.Constant{Name: "b", Value: 2},
-			&ast.Constant{Name: "c", Value: 3},
+			{Name: "a", Value: 1},
+			{Name: "b", Value: 2},
+			{Name: "c", Value: 3},
 		},
 	}
 	r, err := NewResolver(f)
@@ -347,7 +347,7 @@ func TestResolverIntervals(t *testing.T) {
 			Name: "lownil",
 			List: &ast.IntegerList{
 				Ranges: []*ast.IntegerRange{
-					&ast.IntegerRange{Low: nil},
+					{Low: nil},
 				},
 			},
 			HasError: true,
@@ -356,7 +356,7 @@ func TestResolverIntervals(t *testing.T) {
 			Name: "highbadtype",
 			List: &ast.IntegerList{
 				Ranges: []*ast.IntegerRange{
-					&ast.IntegerRange{
+					{
 						Low:  &ast.IntegerLiteral{Value: 3},
 						High: &ast.File{},
 					},
@@ -388,12 +388,12 @@ func TestResolverIntType(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{s},
 		Contexts: []*ast.Context{
-			&ast.Context{
+			{
 				Name: "ctx",
 				Members: []*ast.Field{
-					&ast.Field{Name: "a", Type: ast.U8},
-					&ast.Field{Name: "b", Type: ast.U16},
-					&ast.Field{Name: "c", Type: ast.U32},
+					{Name: "a", Type: ast.U8},
+					{Name: "b", Type: ast.U16},
+					{Name: "c", Type: ast.U32},
 				},
 			},
 		},

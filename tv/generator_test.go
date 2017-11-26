@@ -22,7 +22,7 @@ func TestIntType(t *testing.T) {
 	v, err := String(`struct color { u8 r; u8 g; u8 b; }`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"color": []Vector{
+		"color": {
 			{
 				Data:        []byte{0x7f, 0x8c, 0x53},
 				Constraints: NewConstraints(),
@@ -65,13 +65,13 @@ func TestNestedStruct(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"color": []Vector{
+		"color": {
 			{
 				Data:        []byte{0x7f, 0x8c, 0x53},
 				Constraints: NewConstraints(),
 			},
 		},
-		"gradient": []Vector{
+		"gradient": {
 			{
 				Data:        []byte{0x97, 0x1b, 0xbf, 0x64, 0xb1, 0x96},
 				Constraints: NewConstraints(),
@@ -90,7 +90,7 @@ func TestNulTerm(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"nul_term": []Vector{
+		"nul_term": {
 			{
 				Data: []byte{
 					0x8c, 0x7f, // pre
@@ -183,7 +183,7 @@ func TestRemaining(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"rem": []Vector{
+		"rem": {
 			{
 				Data: []byte{
 					0x72, 0xe8, 0x9f, 0x5b, 0xb4, 0x4b, 0x9f, 0xbb, 0x97, 0x1b,
@@ -215,7 +215,7 @@ func TestUnionBasic(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"basic": []Vector{
+		"basic": {
 			NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
 			NewVector([]byte{0x02, 0x58, 0x08, 0xbf, 0x64, 0x53, 0x8c}),
 		},
@@ -261,7 +261,7 @@ func TestUnionDefault(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"basic": []Vector{
+		"basic": {
 			NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
 			NewVector([]byte{
 				0xc4, 0xbc, 0x75, 0xd3, 0x61, 0x3f, 0x08, 0x58, 0x07, 0x9b,
@@ -301,7 +301,7 @@ func TestUnionCommands(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"basic": []Vector{
+		"basic": {
 			NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
 			NewVector([]byte{0x02}),
 			NewVector([]byte{0x05}),
@@ -319,7 +319,7 @@ func TestPtr(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"haspos": []Vector{
+		"haspos": {
 			NewVector([]byte{
 				'u', 'k', 'p', 't', 't', 0, // s
 				// pos1 occupies no space
@@ -339,7 +339,7 @@ func TestEOS(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	expect := map[string][]Vector{
-		"haseos": []Vector{
+		"haseos": {
 			NewVector([]byte{0x7f, 0x8c, 0x53}),
 		},
 	}

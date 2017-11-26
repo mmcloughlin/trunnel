@@ -51,8 +51,8 @@ func TestFixieStandard(t *testing.T) {
 			0x0001020304050607,
 		},
 		Colors: [2]*Color{
-			&Color{R: 'r', G: 'g', B: 'b'},
-			&Color{R: 'R', G: 'G', B: 'B'},
+			{R: 'r', G: 'g', B: 'b'},
+			{R: 'R', G: 'G', B: 'B'},
 		},
 	}, f)
 	assert.Equal(t, []byte("rest"), rest)

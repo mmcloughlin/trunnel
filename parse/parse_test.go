@@ -77,7 +77,7 @@ func TestExtern(t *testing.T) {
 	src := "extern struct rgb;"
 	expect := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{Name: "rgb"},
+			{Name: "rgb"},
 		},
 	}
 	f, err := String(src)
@@ -89,7 +89,7 @@ func TestExternContexts(t *testing.T) {
 	src := "extern struct rgb with context a,b,c;"
 	expect := &ast.File{
 		Structs: []*ast.Struct{
-			&ast.Struct{
+			{
 				Name:     "rgb",
 				Contexts: []string{"a", "b", "c"},
 			},
@@ -514,16 +514,16 @@ func TestUnion(t *testing.T) {
 						Name: "addr",
 						Tag:  &ast.IDRef{Name: "tag"},
 						Cases: []*ast.UnionCase{
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(4)),
 								Members: []ast.Member{
 									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(5)),
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(6)),
 								Members: []ast.Member{
 									&ast.Field{
@@ -535,7 +535,7 @@ func TestUnion(t *testing.T) {
 									},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(
 									ast.NewIntegerRangeSingleLiteral(0xf0),
 									ast.NewIntegerRangeSingleLiteral(0xf1),
@@ -551,7 +551,7 @@ func TestUnion(t *testing.T) {
 									},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(
 									ast.NewIntegerRangeLiteral(0xf2, 0xff),
 								),
@@ -559,7 +559,7 @@ func TestUnion(t *testing.T) {
 									&ast.Field{Name: "ext", Type: &ast.StructRef{Name: "extension"}},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case:    nil, // default
 								Members: []ast.Member{&ast.Fail{}},
 							},
@@ -599,18 +599,18 @@ func TestUnionExtentSpec(t *testing.T) {
 						Tag:    &ast.IDRef{Name: "tag"},
 						Length: &ast.IDRef{Name: "length"},
 						Cases: []*ast.UnionCase{
-							&ast.UnionCase{
+							{
 								Case:    ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(7)),
 								Members: []ast.Member{&ast.Ignore{}},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xee)),
 								Members: []ast.Member{
 									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
 									&ast.Ignore{},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(0xef)),
 								Members: []ast.Member{
 									&ast.Field{Type: ast.U32, Name: "ipv4_addr"},
@@ -623,7 +623,7 @@ func TestUnionExtentSpec(t *testing.T) {
 									},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: nil,
 								Members: []ast.Member{
 									&ast.Field{
@@ -667,7 +667,7 @@ func TestUnionMembersAfter(t *testing.T) {
 						Tag:    &ast.IDRef{Name: "type"},
 						Length: &ast.Leftover{Num: &ast.IntegerLiteral{Value: 32}},
 						Cases: []*ast.UnionCase{
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(1)),
 								Members: []ast.Member{
 									&ast.Field{
@@ -679,7 +679,7 @@ func TestUnionMembersAfter(t *testing.T) {
 									},
 								},
 							},
-							&ast.UnionCase{
+							{
 								Case: ast.NewIntegerList(ast.NewIntegerRangeSingleLiteral(2)),
 								Members: []ast.Member{
 									&ast.Field{
@@ -785,10 +785,10 @@ func TestContext(t *testing.T) {
 			{
 				Name: "ctx",
 				Members: []*ast.Field{
-					&ast.Field{Type: ast.U8, Name: "a"},
-					&ast.Field{Type: ast.U16, Name: "b"},
-					&ast.Field{Type: ast.U32, Name: "c"},
-					&ast.Field{Type: ast.U64, Name: "d"},
+					{Type: ast.U8, Name: "a"},
+					{Type: ast.U16, Name: "b"},
+					{Type: ast.U32, Name: "c"},
+					{Type: ast.U64, Name: "d"},
 				},
 			},
 		},
