@@ -2,6 +2,7 @@ package gen
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mmcloughlin/trunnel/internal/test"
@@ -10,46 +11,20 @@ import (
 )
 
 func TestFilesBuild(t *testing.T) {
-	cases := []struct {
-		Name         string
-		Dir          string
-		Dependencies map[string][]string
-	}{
-		{
-			Name: "valid",
-			Dir:  "testdata/valid",
-		},
-		{
-			Name: "tor",
-			Dir:  "../testdata/tor",
-			Dependencies: map[string][]string{
-				"cell_establish_intro.trunnel": []string{"cell_common.trunnel"},
-				"cell_introduce1.trunnel":      []string{"cell_common.trunnel", "ed25519_cert.trunnel"},
-			},
-		},
-		{
-			Name: "trunnel",
-			Dir:  "../testdata/trunnel",
-			Dependencies: map[string][]string{
-				"derived.trunnel": []string{"simple.trunnel"},
-				"opaque.trunnel":  []string{"simple.trunnel"},
-				"prop224.trunnel": []string{"prop220.trunnel"},
-			},
-		},
+	dirs := []string{
+		"testdata/valid",
+		"../testdata/tor",
+		"../testdata/trunnel",
 	}
-	for _, c := range cases {
-		t.Run(c.Name, func(t *testing.T) {
-			pattern := filepath.Join(c.Dir, "*.trunnel")
-			test.Glob(t, pattern, func(t *testing.T, filename string) {
-				filenames := []string{filename}
-				base := filepath.Base(filename)
-				if deps, ok := c.Dependencies[base]; ok {
-					for _, dep := range deps {
-						filenames = append(filenames, filepath.Join(c.Dir, dep))
-					}
-				}
-				Build(t, filenames)
-			})
+	for _, dir := range dirs {
+		t.Run(filepath.Base(dir), func(t *testing.T) {
+			groups, err := test.LoadFileGroups(dir)
+			require.NoError(t, err)
+			for _, group := range groups {
+				t.Run(strings.Join(group, ","), func(t *testing.T) {
+					Build(t, group)
+				})
+			}
 		})
 	}
 }

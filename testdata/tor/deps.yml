@@ -1,0 +1,6 @@
+dependencies:
+    cell_establish_intro.trunnel:
+        - cell_common.trunnel
+    cell_introduce1.trunnel:
+        - cell_common.trunnel
+        - ed25519_cert.trunnel

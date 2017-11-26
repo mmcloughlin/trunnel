@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Glob runs a test on all the files matching a glob pattern.
@@ -21,6 +22,73 @@ func Glob(t *testing.T, pattern string, f func(*testing.T, string)) {
 			f(t, filename)
 		})
 	}
+}
+
+// TrunnelFiles returns all the trunnel files in the given directory.
+func TrunnelFiles(dir string) ([]string, error) {
+	pattern := filepath.Join(dir, "*.trunnel")
+	return filepath.Glob(pattern)
+}
+
+// LoadFileGroups looks for trunnel files in a directory and returns groups of
+// files that can be "compiled" together (accounting for extern struct
+// declarations). Dependencies can be recorded in a deps.yaml file in the
+// directory.
+func LoadFileGroups(dir string) ([][]string, error) {
+	deps, err := LoadDependenciesDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	filenames, err := TrunnelFiles(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	groups := [][]string{}
+	for _, filename := range filenames {
+		group := []string{filename}
+		base := filepath.Base(filename)
+		if ds, ok := deps.Dependencies[base]; ok {
+			for _, d := range ds {
+				group = append(group, filepath.Join(dir, d))
+			}
+		}
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
+
+// Dependencies records dependencies between trunnel files.
+type Dependencies struct {
+	Dependencies map[string][]string
+}
+
+// LoadDependenciesFile loads Dependencies from a YAML file.
+func LoadDependenciesFile(filename string) (*Dependencies, error) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	deps := &Dependencies{}
+	if err := yaml.Unmarshal(b, deps); err != nil {
+		return nil, err
+	}
+	return deps, nil
+}
+
+// LoadDependenciesDir looks for "deps.yaml" in the directory and loads it if
+// it exists. If the file is not found, it loads an empty set of dependencies.
+func LoadDependenciesDir(dir string) (*Dependencies, error) {
+	filename := filepath.Join(dir, "deps.yml")
+	deps, err := LoadDependenciesFile(filename)
+	if os.IsNotExist(err) {
+		return &Dependencies{
+			Dependencies: map[string][]string{},
+		}, nil
+	}
+	return deps, err
 }
 
 // Build checks whether Go source code src builds correctly. Returns the output

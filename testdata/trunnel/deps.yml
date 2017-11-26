@@ -1,0 +1,7 @@
+dependencies:
+    derived.trunnel:
+        - simple.trunnel
+    opaque.trunnel:
+        - simple.trunnel
+    prop224.trunnel:
+        - prop220.trunnel
