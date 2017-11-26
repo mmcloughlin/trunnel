@@ -78,7 +78,7 @@ func LoadDependenciesFile(filename string) (*Dependencies, error) {
 	return deps, nil
 }
 
-// LoadDependenciesDir looks for "deps.yaml" in the directory and loads it if
+// LoadDependenciesDir looks for "deps.yml" in the directory and loads it if
 // it exists. If the file is not found, it loads an empty set of dependencies.
 func LoadDependenciesDir(dir string) (*Dependencies, error) {
 	filename := filepath.Join(dir, "deps.yml")
