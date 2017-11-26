@@ -56,31 +56,70 @@ type Resolver struct {
 	constants map[string]int64
 }
 
-// NewResolver builds a resolver from the given file.
-func NewResolver(f *ast.File) (*Resolver, error) {
-	s, err := Structs(f)
-	if err != nil {
-		return nil, err
-	}
-
-	ctxs, err := Contexts(f)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := Constants(f)
-	if err != nil {
-		return nil, err
-	}
-
+// NewResolverEmpty returns a new empty resolver.
+func NewResolverEmpty() *Resolver {
 	return &Resolver{
-		structs:   s,
-		contexts:  ctxs,
-		constants: c,
-	}, nil
+		structs:   map[string]*ast.Struct{},
+		contexts:  map[string]*ast.Context{},
+		constants: map[string]int64{},
+	}
 }
 
-// Struct returns the struct with the given name. Inlcudes extern struct
+// NewResolver builds a resolver from the given file.
+func NewResolver(f *ast.File) (*Resolver, error) {
+	r := NewResolverEmpty()
+	if err := r.AddFile(f); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// AddFile adds declarations from the file to the Resolver.
+func (r *Resolver) AddFile(f *ast.File) error {
+	structs, err := Structs(f)
+	if err != nil {
+		return err
+	}
+	for _, s := range structs {
+		if err = r.AddStruct(s); err != nil {
+			return err
+		}
+	}
+
+	contexts, err := Contexts(f)
+	if err != nil {
+		return err
+	}
+	for _, ctx := range contexts {
+		if err = r.AddContext(ctx); err != nil {
+			return err
+		}
+	}
+
+	constants, err := Constants(f)
+	if err != nil {
+		return err
+	}
+	for n, v := range constants {
+		if err := r.SetConstant(n, v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// AddStruct adds a struct to the Resolver. An existing extern declaration can
+// be overridden by an actual declaration.
+func (r *Resolver) AddStruct(s *ast.Struct) error {
+	if e, exists := r.Struct(s.Name); exists && !e.Extern() {
+		return errors.New("cannot override non-extern struct")
+	}
+	r.structs[s.Name] = s
+	return nil
+}
+
+// Struct returns the struct with the given name. Includes extern struct
 // declarations.
 func (r *Resolver) Struct(n string) (*ast.Struct, bool) {
 	s, ok := r.structs[n]
@@ -99,17 +138,47 @@ func (r *Resolver) StructNonExtern(n string) (*ast.Struct, error) {
 	return s, nil
 }
 
+// AddContext adds a context to the Resolver.
+func (r *Resolver) AddContext(ctx *ast.Context) error {
+	if _, exists := r.Context(ctx.Name); exists {
+		return errors.New("cannot override context")
+	}
+	r.contexts[ctx.Name] = ctx
+	return nil
+}
+
 // Context returns the context with the given name.
 func (r *Resolver) Context(n string) (*ast.Context, bool) {
 	ctx, ok := r.contexts[n]
 	return ctx, ok
 }
 
+// AddConstant adds a constant declaration.
+func (r *Resolver) AddConstant(c *ast.Constant) error {
+	return r.SetConstant(c.Name, c.Value)
+}
+
+// SetConstant sets a constant value. Errors if the constant value conflicts
+// with an existsing setting.
+func (r *Resolver) SetConstant(n string, v int64) error {
+	if e, exists := r.constants[n]; exists && e != v {
+		return errors.New("cannot override constant")
+	}
+	r.constants[n] = v
+	return nil
+}
+
+// Constant looks up the value of constant n.
+func (r *Resolver) Constant(n string) (int64, bool) {
+	v, ok := r.constants[n]
+	return v, ok
+}
+
 // Integer resolves i to an integer value.
 func (r *Resolver) Integer(i ast.Integer) (int64, error) {
 	switch i := i.(type) {
 	case *ast.IntegerConstRef:
-		v, ok := r.constants[i.Name]
+		v, ok := r.Constant(i.Name)
 		if !ok {
 			return 0, errors.New("constant undefined")
 		}

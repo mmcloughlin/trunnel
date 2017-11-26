@@ -94,6 +94,53 @@ func TestNewResolverErrors(t *testing.T) {
 	}
 }
 
+func TestResolverAddFileErrors(t *testing.T) {
+	files := []*ast.File{
+		&ast.File{
+			Structs: []*ast.Struct{
+				&ast.Struct{Name: "a", Members: []ast.Member{
+					&ast.Field{Name: "x", Type: ast.U8},
+				}},
+			}},
+		&ast.File{Contexts: []*ast.Context{&ast.Context{Name: "a"}}},
+		&ast.File{Constants: []*ast.Constant{&ast.Constant{Name: "a"}}},
+	}
+	for _, f := range files {
+		r := NewResolverEmpty()
+		err := r.AddFile(f)
+		require.NoError(t, err)
+		f.Constants = []*ast.Constant{{Name: "a", Value: 1}} // hack to force constant conflict
+		err = r.AddFile(f)
+		require.Error(t, err)
+	}
+}
+
+func TestResolverAddStructOverrideError(t *testing.T) {
+	r := NewResolverEmpty()
+
+	s := &ast.Struct{Name: "a", Members: []ast.Member{
+		&ast.Field{Name: "x", Type: ast.U16},
+	}}
+
+	err := r.AddStruct(s)
+	require.NoError(t, err)
+
+	err = r.AddStruct(s)
+	require.EqualError(t, err, "cannot override non-extern struct")
+}
+
+func TestResolverAddStructOverrideExtern(t *testing.T) {
+	r := NewResolverEmpty()
+
+	err := r.AddStruct(&ast.Struct{Name: "a"})
+	require.NoError(t, err)
+
+	err = r.AddStruct(&ast.Struct{Name: "a", Members: []ast.Member{
+		&ast.Field{Name: "x", Type: ast.U16},
+	}})
+	require.NoError(t, err)
+}
+
 func TestResolverStruct(t *testing.T) {
 	f := &ast.File{
 		Structs: []*ast.Struct{
@@ -140,6 +187,21 @@ func TestResolverStructNonExtern(t *testing.T) {
 	assert.EqualError(t, err, "struct not found")
 }
 
+func TestResolverAddContext(t *testing.T) {
+	r := NewResolverEmpty()
+	ctx := &ast.Context{Name: "a"}
+
+	err := r.AddContext(ctx)
+	require.NoError(t, err)
+
+	err = r.AddContext(ctx)
+	require.EqualError(t, err, "cannot override context")
+
+	c, ok := r.Context("a")
+	assert.True(t, ok)
+	assert.Equal(t, &ast.Context{Name: "a"}, c)
+}
+
 func TestResolverContext(t *testing.T) {
 	f := &ast.File{
 		Contexts: []*ast.Context{
@@ -156,6 +218,42 @@ func TestResolverContext(t *testing.T) {
 
 	_, ok = r.Context("idk")
 	assert.False(t, ok)
+}
+
+func TestResolverAddConstant(t *testing.T) {
+	r := NewResolverEmpty()
+	c := &ast.Constant{
+		Name:  "X",
+		Value: 42,
+	}
+	err := r.AddConstant(c)
+	require.NoError(t, err)
+
+	v, ok := r.Constant("X")
+	require.True(t, ok)
+	assert.Equal(t, int64(42), v)
+}
+
+func TestResolverSetConstantTwice(t *testing.T) {
+	r := NewResolverEmpty()
+	err := r.SetConstant("X", 42)
+	require.NoError(t, err)
+
+	err = r.SetConstant("X", 42)
+	require.NoError(t, err)
+
+	v, ok := r.Constant("X")
+	require.True(t, ok)
+	assert.Equal(t, int64(42), v)
+}
+
+func TestResolverSetConstantOverride(t *testing.T) {
+	r := NewResolverEmpty()
+	err := r.SetConstant("X", 42)
+	require.NoError(t, err)
+
+	err = r.SetConstant("X", 43)
+	assert.Error(t, err)
 }
 
 func TestResolverInteger(t *testing.T) {
