@@ -5,7 +5,6 @@ import (
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"
-	"github.com/pkg/errors"
 )
 
 // Vector is a test vector.
@@ -181,9 +180,9 @@ func (g *generator) field(f *ast.Field) ([]Vector, error) {
 		return []Vector{g.vector(g.randnulterm(2, 20))}, nil
 
 	case *ast.StructRef:
-		s, ok := g.resolver.Struct(t.Name)
-		if !ok {
-			return nil, errors.New("could not resolve struct name")
+		s, err := g.resolver.StructNonExtern(t.Name)
+		if err != nil {
+			return nil, err
 		}
 		return g.structure(s)
 
