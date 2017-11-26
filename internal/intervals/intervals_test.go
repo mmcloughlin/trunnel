@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/mmcloughlin/random"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -222,9 +223,11 @@ func TestSetRandomEmpty(t *testing.T) {
 }
 
 func TestRandUint64n(t *testing.T) {
+	rnd, err := random.NewFromSeeder(random.CryptoSeeder)
+	require.NoError(t, err)
 	for i := 0; i < NumTrials(); i++ {
 		n := uint64(2 + rand.Intn(42))
-		require.True(t, randuint64n(n) < n)
+		require.True(t, randuint64n(rnd, n) < n)
 	}
 }
 

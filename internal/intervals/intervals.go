@@ -4,10 +4,11 @@ package intervals
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/mmcloughlin/random"
 )
 
 // Interval represents the inclusive range of integers [lo, hi].
@@ -74,15 +75,15 @@ func Overlaps(is []Interval) bool {
 	return len(intersections) > 0
 }
 
-// Set is a collection of intervals.
-type Set struct {
-	intervals []Interval
-}
-
 // Simplify simplifies a set of intervals such that they cover the the same set
 // of integers in a minimal way.
 func Simplify(is []Interval) []Interval {
 	return thresholds(1, is)
+}
+
+// Set is a collection of intervals.
+type Set struct {
+	intervals []Interval
 }
 
 // NewSet builds a set from the union of given intervals. The intervals will be
@@ -187,6 +188,12 @@ func (e edges) Less(i, j int) bool {
 // Random returns a random element of the collection. Assumes the collection
 // contains non-overlapping intervals. Panics if s is empty.
 func (s Set) Random() uint64 {
+	return s.RandomWithGenerator(random.New())
+}
+
+// RandomWithGenerator is like Random() but allows you to control the random
+// generator.
+func (s Set) RandomWithGenerator(rnd random.Interface) uint64 {
 	if len(s.intervals) == 0 {
 		panic("empty set")
 	}
@@ -203,7 +210,7 @@ func (s Set) Random() uint64 {
 			delta: i.hi - cuml + 1,
 		})
 	}
-	r := randuint64n(cuml)
+	r := randuint64n(rnd, cuml)
 	for _, step := range steps {
 		if r < step.upper {
 			return r + step.delta
@@ -213,7 +220,7 @@ func (s Set) Random() uint64 {
 }
 
 // randuint64n returns a random uint64 in [0,n).
-func randuint64n(n uint64) uint64 {
+func randuint64n(rnd random.Interface, n uint64) uint64 {
 	mask := ^uint64(0)
 	for mask > n {
 		mask >>= 1
@@ -221,13 +228,13 @@ func randuint64n(n uint64) uint64 {
 	mask = (mask << 1) | uint64(1)
 
 	for {
-		r := randuint64() & mask
+		r := randuint64(rnd) & mask
 		if r < n {
 			return r
 		}
 	}
 }
 
-func randuint64() uint64 {
-	return uint64(rand.Int63())>>31 | uint64(rand.Int63())<<32
+func randuint64(rnd random.Interface) uint64 {
+	return uint64(rnd.Int63())>>31 | uint64(rnd.Int63())<<32
 }

@@ -45,13 +45,15 @@ type generator struct {
 	constraints Constraints
 	strct       *ast.Struct
 
-	rnd random.Interface
+	selector Selector
+	rnd      random.Interface
 }
 
 // Generate generates a set of test vectors for the types defined in f.
 func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
 	g := &generator{
-		rnd: random.New(),
+		selector: Exhaustive,
+		rnd:      random.New(),
 	}
 	for _, opt := range opts {
 		opt(g)
@@ -61,6 +63,13 @@ func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
 
 // Option is an option to control test vector generation.
 type Option func(*generator)
+
+// WithSelector sets the method for cutting down the number of vectors we have.
+func WithSelector(s Selector) Option {
+	return func(g *generator) {
+		g.selector = s
+	}
+}
 
 // WithRandom sets the random source for test vector generation.
 func WithRandom(r random.Interface) Option {
@@ -132,7 +141,7 @@ func (g *generator) members(vs []Vector, ms []ast.Member) ([]Vector, error) {
 				extended = append(extended, mv)
 			}
 		}
-		vs = extended
+		vs = g.selector.SelectVectors(extended)
 	}
 	return vs, nil
 }
@@ -201,7 +210,7 @@ func (g *generator) intType(name string, t *ast.IntType) ([]Vector, error) {
 		if err != nil {
 			return nil, err
 		}
-		r := s.Random()
+		r := s.RandomWithGenerator(g.rnd)
 		b = intbytes(int64(r), t.Size) // XXX cast
 
 	default:
@@ -246,6 +255,7 @@ func (g *generator) array(base ast.Type, s ast.LengthConstraint) ([]Vector, erro
 		if err != nil {
 			return nil, err
 		}
+		v = g.selector.SelectVectors(v)
 	}
 	return v, nil
 }
@@ -272,7 +282,7 @@ func (g *generator) union(u *ast.UnionMember) ([]Vector, error) {
 
 	for _, b := range options {
 		g.constraints = base.Clone()
-		g.constraints.LookupOrCreateRef(u.Tag, int64(b.Set.Random())) // XXX cast
+		g.constraints.LookupOrCreateRef(u.Tag, int64(b.Set.RandomWithGenerator(g.rnd))) // XXX cast
 		vs, err := g.members([]Vector{g.empty()}, b.Case.Members)
 		if err != nil {
 			return nil, err
