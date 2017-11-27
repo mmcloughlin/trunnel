@@ -50,12 +50,12 @@ type generator struct {
 }
 
 // Generate generates a set of test vectors for the types defined in f.
-func Generate(f *ast.File, opts ...Option) (map[string][]Vector, error) {
+func Generate(f *ast.File, opts ...Option) (*Corpus, error) {
 	return GenerateFiles([]*ast.File{f}, opts...)
 }
 
 // GenerateFiles generates test vectors for the types in the given files.
-func GenerateFiles(fs []*ast.File, opts ...Option) (map[string][]Vector, error) {
+func GenerateFiles(fs []*ast.File, opts ...Option) (*Corpus, error) {
 	g := &generator{
 		selector: Exhaustive,
 		rnd:      random.New(),
@@ -88,27 +88,31 @@ func (g *generator) init(fs []*ast.File) (err error) {
 	return
 }
 
-func (g *generator) files(fs []*ast.File) (map[string][]Vector, error) {
+func (g *generator) files(fs []*ast.File) (*Corpus, error) {
 	err := g.init(fs)
 	if err != nil {
 		return nil, err
 	}
 
-	v := map[string][]Vector{}
+	c := &Corpus{}
 	for _, f := range fs {
 		for _, s := range f.Structs {
 			if s.Extern() {
 				continue
 			}
 			g.constraints = NewConstraints()
-			v[s.Name], err = g.structure(s)
+			vs, err := g.structure(s)
 			if err != nil {
 				return nil, err
 			}
+			c.Suites = append(c.Suites, Suite{
+				Type:    s.Name,
+				Vectors: vs,
+			})
 		}
 	}
 
-	return v, nil
+	return c, nil
 }
 
 func (g *generator) structure(s *ast.Struct) ([]Vector, error) {

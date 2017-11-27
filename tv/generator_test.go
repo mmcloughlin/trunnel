@@ -1,5 +1,14 @@
 package tv
 
+// expect := &Corpus{
+// 	Suites: []Suite{
+// 		{
+// 			"",
+//
+// 		}
+// 	},
+// }
+
 import (
 	"encoding/binary"
 	"testing"
@@ -11,7 +20,7 @@ import (
 	"github.com/mmcloughlin/trunnel/parse"
 )
 
-func String(code string) (map[string][]Vector, error) {
+func String(code string) (*Corpus, error) {
 	f, err := parse.String(code)
 	if err != nil {
 		return nil, err
@@ -22,14 +31,10 @@ func String(code string) (map[string][]Vector, error) {
 func TestIntType(t *testing.T) {
 	v, err := String(`struct color { u8 r; u8 g; u8 b; }`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"color": {
-			{
-				Data:        []byte{0x7f, 0x8c, 0x53},
-				Constraints: NewConstraints(),
-			},
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("color", []Vector{
+		NewVector([]byte{0x7f, 0x8c, 0x53}),
+	})
 	assert.Equal(t, expect, v)
 }
 
@@ -42,9 +47,9 @@ func TestIntConstraint(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 10000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		b := vs["date"][0].Data
+		b := c.Vectors("date")[0].Data
 		require.Len(t, b, 4)
 
 		y := binary.BigEndian.Uint16(b)
@@ -58,28 +63,21 @@ func TestIntConstraint(t *testing.T) {
 }
 
 func TestNestedStruct(t *testing.T) {
-	v, err := String(`
+	c, err := String(`
 	struct color { u8 r; u8 g; u8 b; };
 	struct gradient {
 		struct color from;
 		struct color to;
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"color": {
-			{
-				Data:        []byte{0x7f, 0x8c, 0x53},
-				Constraints: NewConstraints(),
-			},
-		},
-		"gradient": {
-			{
-				Data:        []byte{0x97, 0x1b, 0xbf, 0x64, 0xb1, 0x96},
-				Constraints: NewConstraints(),
-			},
-		},
-	}
-	assert.Equal(t, expect, v)
+	expect := &Corpus{}
+	expect.AddVectors("color", []Vector{
+		NewVector([]byte{0x7f, 0x8c, 0x53}),
+	})
+	expect.AddVectors("gradient", []Vector{
+		NewVector([]byte{0x97, 0x1b, 0xbf, 0x64, 0xb1, 0x96}),
+	})
+	assert.Equal(t, expect, c)
 }
 
 func TestNulTerm(t *testing.T) {
@@ -90,18 +88,14 @@ func TestNulTerm(t *testing.T) {
 		u8 post;
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"nul_term": {
-			{
-				Data: []byte{
-					0x8c, 0x7f, // pre
-					'u', 'k', 'p', 't', 't', 0, // s
-					0x53, // post
-				},
-				Constraints: NewConstraints(),
-			},
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("nul_term", []Vector{
+		NewVector([]byte{
+			0x8c, 0x7f, // pre
+			'u', 'k', 'p', 't', 't', 0, // s
+			0x53, // post
+		}),
+	})
 	assert.Equal(t, expect, v)
 }
 
@@ -119,9 +113,9 @@ func TestFixedArray(t *testing.T) {
 	}`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		v, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		d := v["fixie"][0].Data
+		d := c.Vectors("fixie")[0].Data
 		require.Len(t, d, 8+8+2*4+4*2+8*2+3*2)
 	}
 }
@@ -130,9 +124,9 @@ func TestVarArray(t *testing.T) {
 	f, err := parse.String(`struct var { u16 n; u32 words[n]; };`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		v := vs["var"][0]
+		v := c.Vectors("var")[0]
 		n := binary.BigEndian.Uint16(v.Data)
 		require.Len(t, v.Data, 2+4*int(n))
 	}
@@ -145,9 +139,9 @@ func TestNestedVar(t *testing.T) {
 	`)
 	require.NoError(t, err)
 	for i := 0; i < 100; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		b := vs["nest"][0].Data
+		b := c.Vectors("nest")[0].Data
 
 		// should be able to follow the length fields to the end
 		n, b := binary.BigEndian.Uint16(b), b[2:]
@@ -169,9 +163,9 @@ func TestLengthDoubleUse(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		b := vs["dbl"][0].Data
+		b := c.Vectors("dbl")[0].Data
 		n := int(b[0])
 		require.Len(t, b, 1+12*n)
 	}
@@ -183,16 +177,12 @@ func TestRemaining(t *testing.T) {
 		u8 tail[];
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"rem": {
-			{
-				Data: []byte{
-					0x72, 0xe8, 0x9f, 0x5b, 0xb4, 0x4b, 0x9f, 0xbb, 0x97, 0x1b,
-				},
-				Constraints: NewConstraints(),
-			},
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("rem", []Vector{
+		NewVector([]byte{
+			0x72, 0xe8, 0x9f, 0x5b, 0xb4, 0x4b, 0x9f, 0xbb, 0x97, 0x1b,
+		}),
+	})
 	assert.Equal(t, expect, vs)
 }
 
@@ -215,12 +205,11 @@ func TestUnionBasic(t *testing.T) {
 		u16 right_after_the_union;
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"basic": {
-			NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
-			NewVector([]byte{0x02, 0x58, 0x08, 0xbf, 0x64, 0x53, 0x8c}),
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("basic", []Vector{
+		NewVector([]byte{0x01, 0xb1, 0x96, 0x7f, 0x53, 0x8c}),
+		NewVector([]byte{0x02, 0x58, 0x08, 0xbf, 0x64, 0x53, 0x8c}),
+	})
 	assert.Equal(t, expect, vs)
 }
 
@@ -238,10 +227,11 @@ func TestTagDoubleUse(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		require.Len(t, vs["dbltag"], 2)
-		for j, v := range vs["dbltag"] {
+		vs := c.Vectors("dbltag")
+		require.Len(t, vs, 2)
+		for j, v := range vs {
 			b := v.Data
 			tag := j + 1
 			require.Equal(t, byte(tag), b[0])
@@ -261,15 +251,15 @@ func TestUnionDefault(t *testing.T) {
 		};
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"basic": {
-			NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
-			NewVector([]byte{
-				0xc4, 0xbc, 0x75, 0xd3, 0x61, 0x3f, 0x08, 0x58, 0x07, 0x9b,
-				0x70, 0xe0, 0xcb, 0x1a, 0x84, 0x9b, 0xd7, 0xdf,
-			}),
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("basic", []Vector{
+		NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
+		NewVector([]byte{
+			0xc4, 0xbc, 0x75, 0xd3, 0x61, 0x3f, 0x08, 0x58, 0x07, 0x9b,
+			0x70, 0xe0, 0xcb, 0x1a, 0x84, 0x9b, 0xd7, 0xdf,
+		}),
+	})
+
 	assert.Equal(t, expect, vs)
 }
 
@@ -283,10 +273,11 @@ func TestUnionDefaultRange(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		require.True(t, binary.BigEndian.Uint16(vs["basic"][0].Data) <= uint16(0x2ff))
-		require.True(t, binary.BigEndian.Uint16(vs["basic"][1].Data) > uint16(0x2ff))
+		vs := c.Vectors("basic")
+		require.True(t, binary.BigEndian.Uint16(vs[0].Data) <= uint16(0x2ff))
+		require.True(t, binary.BigEndian.Uint16(vs[1].Data) > uint16(0x2ff))
 	}
 }
 
@@ -301,14 +292,14 @@ func TestUnionCommands(t *testing.T) {
 		};
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"basic": {
-			NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
-			NewVector([]byte{0x02}),
-			NewVector([]byte{0x05}),
-			NewVector([]byte{0x05, 0xdf, 0xd7, 0x9b, 0x13, 0xdd, 0x1a, 0xac}),
-		},
-	}
+
+	expect := &Corpus{}
+	expect.AddVectors("basic", []Vector{
+		NewVector([]byte{0x01, 0x09, 0xdd, 0x9d, 0x52}),
+		NewVector([]byte{0x02}),
+		NewVector([]byte{0x05}),
+		NewVector([]byte{0x05, 0xdf, 0xd7, 0x9b, 0x13, 0xdd, 0x1a, 0xac}),
+	})
 	assert.Equal(t, expect, vs)
 }
 
@@ -319,15 +310,14 @@ func TestPtr(t *testing.T) {
 		u32 after;
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"haspos": {
-			NewVector([]byte{
-				'u', 'k', 'p', 't', 't', 0, // s
-				// pos1 occupies no space
-				0x53, 0x8c, 0x7f, 0x96, // after
-			}),
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("haspos", []Vector{
+		NewVector([]byte{
+			'u', 'k', 'p', 't', 't', 0, // s
+			// pos1 occupies no space
+			0x53, 0x8c, 0x7f, 0x96, // after
+		}),
+	})
 	assert.Equal(t, expect, vs)
 }
 
@@ -339,19 +329,15 @@ func TestEOS(t *testing.T) {
 		eos;
 	};`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{
-		"haseos": {
-			NewVector([]byte{0x7f, 0x8c, 0x53}),
-		},
-	}
+	expect := &Corpus{}
+	expect.AddVectors("haseos", []Vector{NewVector([]byte{0x7f, 0x8c, 0x53})})
 	assert.Equal(t, expect, vs)
 }
 
 func TestExternStruct(t *testing.T) {
 	vs, err := String(`extern struct ext;`)
 	require.NoError(t, err)
-	expect := map[string][]Vector{}
-	assert.Equal(t, expect, vs)
+	assert.Equal(t, &Corpus{}, vs)
 }
 
 func TestVarArrayContext(t *testing.T) {
@@ -361,9 +347,9 @@ func TestVarArrayContext(t *testing.T) {
 	`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		v := vs["var"][0]
+		v := c.Vectors("var")[0]
 		n, ok := v.Constraints.Lookup("ctx", "n")
 		require.True(t, ok)
 		require.Len(t, v.Data, 4*int(n))
@@ -382,9 +368,9 @@ func TestUnionContext(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		for _, v := range vs["basic"] {
+		for _, v := range c.Vectors("basic") {
 			tag, ok := v.Constraints.Lookup("ctx", "tag")
 			require.True(t, ok)
 			require.Len(t, v.Data, int(tag))
@@ -405,10 +391,11 @@ func TestUnionLength(t *testing.T) {
 	};`)
 	require.NoError(t, err)
 	for i := 0; i < 1000; i++ {
-		vs, err := Generate(f)
+		c, err := Generate(f)
 		require.NoError(t, err)
-		require.Len(t, vs["union_with_len"], 4)
-		for _, v := range vs["union_with_len"] {
+		vs := c.Vectors("union_with_len")
+		require.Len(t, vs, 4)
+		for _, v := range vs {
 			n := binary.BigEndian.Uint16(v.Data[2:])
 			require.Len(t, v.Data, 6+int(n))
 		}

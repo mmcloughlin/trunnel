@@ -36,7 +36,7 @@ func VerifyGroup(t *testing.T, filenames []string) {
 	fs, err := parse.Files(filenames)
 	require.NoError(t, err)
 
-	vs, err := GenerateFiles(fs, WithSelector(RandomSampleSelector(16)))
+	c, err := GenerateFiles(fs, WithSelector(RandomSampleSelector(16)))
 	if err == fault.ErrNotImplemented {
 		t.Log(err)
 		t.SkipNow()
@@ -51,8 +51,7 @@ func VerifyGroup(t *testing.T, filenames []string) {
 			continue
 		}
 		t.Run(s.Name, func(t *testing.T) {
-			require.Contains(t, vs, s.Name)
-			num := len(vs[s.Name])
+			num := len(c.Vectors(s.Name))
 			t.Logf("%d test vectors for %s", num, s.Name)
 			assert.True(t, num > 0)
 		})
