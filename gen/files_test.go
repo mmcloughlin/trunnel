@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/mmcloughlin/trunnel/parse"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFilesBuild(t *testing.T) {

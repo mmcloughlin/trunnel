@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mmcloughlin/trunnel/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mmcloughlin/trunnel/parse"
 )
 
 var update = flag.Bool("update", false, "update golden files")

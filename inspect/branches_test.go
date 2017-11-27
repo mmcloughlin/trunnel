@@ -3,11 +3,12 @@ package inspect
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/internal/intervals"
 	"github.com/mmcloughlin/trunnel/parse"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewBranchesNoDefault(t *testing.T) {

@@ -5,12 +5,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"
 	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/mmcloughlin/trunnel/parse"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFiles(t *testing.T) {

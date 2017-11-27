@@ -2,6 +2,7 @@ package tv
 
 import (
 	"github.com/mmcloughlin/random"
+
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/inspect"

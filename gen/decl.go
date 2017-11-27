@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/tools/imports"
+
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/inspect"
-	"golang.org/x/tools/imports"
 )
 
 // File generates code for the given AST.

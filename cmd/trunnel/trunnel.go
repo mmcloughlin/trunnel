@@ -5,9 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/urfave/cli"
+
 	"github.com/mmcloughlin/trunnel/gen"
 	"github.com/mmcloughlin/trunnel/parse"
-	"github.com/urfave/cli"
 )
 
 func main() {

@@ -3,8 +3,9 @@ package parse
 import (
 	"testing"
 
-	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mmcloughlin/trunnel/internal/test"
 )
 
 func TestValidFiles(t *testing.T) {

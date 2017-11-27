@@ -3,10 +3,11 @@ package inspect
 import (
 	"testing"
 
-	"github.com/mmcloughlin/trunnel/ast"
-	"github.com/mmcloughlin/trunnel/internal/intervals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mmcloughlin/trunnel/ast"
+	"github.com/mmcloughlin/trunnel/internal/intervals"
 )
 
 func TestStructs(t *testing.T) {

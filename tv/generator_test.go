@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/mmcloughlin/random"
-	"github.com/mmcloughlin/trunnel/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mmcloughlin/trunnel/parse"
 )
 
 func String(code string) (map[string][]Vector, error) {
