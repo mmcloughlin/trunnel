@@ -1,14 +1,5 @@
 package tv
 
-// expect := &Corpus{
-// 	Suites: []Suite{
-// 		{
-// 			"",
-//
-// 		}
-// 	},
-// }
-
 import (
 	"encoding/binary"
 	"testing"
