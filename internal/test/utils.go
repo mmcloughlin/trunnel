@@ -2,6 +2,7 @@
 package test
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -91,6 +93,16 @@ func LoadDependenciesDir(dir string) (*Dependencies, error) {
 	return deps, err
 }
 
+// TempDir creates a temp directory. Returns the path to the directory and a
+// cleanup function.
+func TempDir(t *testing.T) (string, func()) {
+	dir, err := ioutil.TempDir("", "trunnel")
+	require.NoError(t, err)
+	return dir, func() {
+		require.NoError(t, os.RemoveAll(dir))
+	}
+}
+
 // Build checks whether Go source code src builds correctly. Returns the output
 // of "go build" and an error, if any.
 func Build(srcs [][]byte) ([]byte, error) {
@@ -114,4 +126,26 @@ func Build(srcs [][]byte) ([]byte, error) {
 	args := append([]string{"build"}, filenames...)
 	cmd := exec.Command("go", args...)
 	return cmd.CombinedOutput()
+}
+
+// FileContentsEqual determines whether a and b have the same contents.
+func FileContentsEqual(a, b string) (bool, error) {
+	da, err := ioutil.ReadFile(a)
+	if err != nil {
+		return false, err
+	}
+
+	db, err := ioutil.ReadFile(b)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(da, db), nil
+}
+
+// AssertFileContentsEqual asserts that files a and b have the same contents.
+func AssertFileContentsEqual(t *testing.T, a, b string) {
+	eq, err := FileContentsEqual(a, b)
+	require.NoError(t, err)
+	assert.True(t, eq)
 }

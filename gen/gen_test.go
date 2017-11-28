@@ -2,14 +2,14 @@ package gen
 
 import (
 	"flag"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/mmcloughlin/trunnel/ast"
+	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/mmcloughlin/trunnel/parse"
 )
 
@@ -43,12 +43,11 @@ func LoadTestCasesGlob(pattern string) ([]TestCase, error) {
 	return t, nil
 }
 
-func (t TestCase) PackageName() string {
-	return t.Name
-}
-
-func (t TestCase) GoFilename() string {
-	return filepath.Join(t.Dir, "gen-"+t.Name+".go")
+func (t TestCase) Config() Config {
+	return Config{
+		Package: t.Name,
+		Dir:     t.Dir,
+	}
 }
 
 func TestGeneratedFiles(t *testing.T) {
@@ -57,21 +56,25 @@ func TestGeneratedFiles(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
+			tmp, clean := test.TempDir(t)
+			defer clean()
+
 			f, err := parse.File(c.TrunnelFile)
 			require.NoError(t, err)
 
-			src, err := File(c.PackageName(), f)
-			require.NoError(t, err)
-
-			if *update {
-				err = ioutil.WriteFile(c.GoFilename(), src, 0640)
-				require.NoError(t, err)
+			cfg := c.Config()
+			if !*update {
+				cfg.Dir = tmp
 			}
-
-			expect, err := ioutil.ReadFile(c.GoFilename())
+			err = Package(cfg, []*ast.File{f})
 			require.NoError(t, err)
 
-			assert.Equal(t, expect, src)
+			cmp := []string{"gen-marshallers.go"}
+			for _, path := range cmp {
+				a := filepath.Join(cfg.Dir, path)
+				b := filepath.Join(c.Dir, path)
+				test.AssertFileContentsEqual(t, a, b)
+			}
 		})
 	}
 }

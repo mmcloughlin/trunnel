@@ -2,10 +2,10 @@ package tv
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,11 +25,11 @@ func TestWriteCorpusReal(t *testing.T) {
 	c.AddVectors("a", []Vector{NewVector([]byte("hello"))})
 
 	// write corpus to a temp directory
-	dir, err := ioutil.TempDir("", "corpus")
-	require.NoError(t, err)
+	dir, clean := test.TempDir(t)
+	defer clean()
 	t.Log(dir)
 
-	err = WriteCorpus(c, dir)
+	err := WriteCorpus(c, dir)
 	require.NoError(t, err)
 
 	// confirm the vector file exists
@@ -38,8 +38,4 @@ func TestWriteCorpusReal(t *testing.T) {
 	b, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("hello"), b)
-
-	// cleanup
-	err = os.RemoveAll(dir)
-	assert.NoError(t, err)
 }
