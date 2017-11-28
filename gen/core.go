@@ -42,11 +42,7 @@ func Package(cfg Config, fs []*ast.File) error {
 	}
 
 	corpusDir := filepath.Join(cfg.Dir, "testdata/corpus")
-	if err = tv.WriteCorpus(c, corpusDir); err != nil {
-		return err
-	}
-
-	return nil
+	return tv.WriteCorpus(c, corpusDir)
 }
 
 func name(n string) string {
