@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/mmcloughlin/random"
+	"github.com/serenize/snaker"
+
 	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/fault"
 	"github.com/mmcloughlin/trunnel/tv"
-	"github.com/serenize/snaker"
 )
 
 // Config defines options for package generation.

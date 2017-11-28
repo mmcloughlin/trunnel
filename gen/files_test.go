@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/mmcloughlin/trunnel/parse"
 )
@@ -35,7 +36,7 @@ func Build(t *testing.T, filenames []string) {
 	for _, filename := range filenames {
 		f, err := parse.File(filename)
 		require.NoError(t, err)
-		src, err := File("pkg", f)
+		src, err := Marshallers("pkg", []*ast.File{f})
 		require.NoError(t, err)
 		srcs = append(srcs, src)
 	}

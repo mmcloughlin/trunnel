@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mmcloughlin/trunnel/internal/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mmcloughlin/trunnel/internal/test"
 )
 
 func TestCorpusVectors(t *testing.T) {
