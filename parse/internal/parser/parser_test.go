@@ -10,7 +10,7 @@ import (
 func TestOptions(t *testing.T) {
 	opts := []Option{
 		AllowInvalidUTF8(false),
-		Debug(false),
+		Debug(true),
 		Entrypoint(""),
 		MaxExpressions(0),
 		Memoize(false),
