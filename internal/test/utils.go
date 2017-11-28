@@ -128,6 +128,12 @@ func Build(srcs [][]byte) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
+// FileExists tests whether filename exists.
+func FileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return !os.IsNotExist(err)
+}
+
 // FileContentsEqual determines whether a and b have the same contents.
 func FileContentsEqual(a, b string) (bool, error) {
 	da, err := ioutil.ReadFile(a)

@@ -69,11 +69,19 @@ func TestGeneratedFiles(t *testing.T) {
 			err = Package(cfg, []*ast.File{f})
 			require.NoError(t, err)
 
-			cmp := []string{"gen-marshallers.go"}
+			cmp := []string{
+				"gen-marshallers.go",
+				"gen-marshallers_test.go",
+			}
 			for _, path := range cmp {
-				a := filepath.Join(cfg.Dir, path)
-				b := filepath.Join(c.Dir, path)
-				test.AssertFileContentsEqual(t, a, b)
+				t.Run(path, func(t *testing.T) {
+					got := filepath.Join(cfg.Dir, path)
+					expect := filepath.Join(c.Dir, path)
+					if !test.FileExists(expect) {
+						t.SkipNow()
+					}
+					test.AssertFileContentsEqual(t, expect, got)
+				})
 			}
 		})
 	}
