@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/gen"
 	"github.com/mmcloughlin/trunnel/parse"
 )
@@ -45,7 +46,7 @@ var (
 				return cli.NewExitError(err, 1)
 			}
 
-			src, err := gen.File("pkg", f)
+			src, err := gen.Marshallers("pkg", []*ast.File{f})
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
