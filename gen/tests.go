@@ -8,8 +8,7 @@ func CorpusTests(pkg string, c *tv.Corpus) ([]byte, error) {
 	p.header(pkg)
 
 	for _, s := range c.Suites {
-		vs := unconstrained(s.Vectors)
-		if len(vs) == 0 {
+		if constrained(s.Vectors) {
 			continue
 		}
 
@@ -17,7 +16,7 @@ func CorpusTests(pkg string, c *tv.Corpus) ([]byte, error) {
 
 		// cases
 		p.printf("cases := []struct{\nData []byte\n}{\n")
-		for _, v := range vs {
+		for _, v := range s.Vectors {
 			p.printf("{\nData: %#v,\n},\n", v.Data)
 		}
 		p.printf("}\n")
@@ -34,11 +33,11 @@ func CorpusTests(pkg string, c *tv.Corpus) ([]byte, error) {
 	return p.imported()
 }
 
-func unconstrained(vs []tv.Vector) []tv.Vector {
+func constrained(vs []tv.Vector) bool {
 	for _, v := range vs {
 		if len(v.Constraints) > 0 {
-			return nil
+			return true
 		}
 	}
-	return vs
+	return false
 }

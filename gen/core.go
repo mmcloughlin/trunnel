@@ -20,6 +20,11 @@ type Config struct {
 	Seed    int64  // seed for corpus generation
 }
 
+func (c Config) write(name string, b []byte) error {
+	fn := filepath.Join(c.Dir, name)
+	return ioutil.WriteFile(fn, b, 0640)
+}
+
 // Package generates a Go package for the given files.
 func Package(cfg Config, fs []*ast.File) error {
 	// Marshaller file
@@ -27,9 +32,7 @@ func Package(cfg Config, fs []*ast.File) error {
 	if err != nil {
 		return err
 	}
-	fn := filepath.Join(cfg.Dir, "gen-marshallers.go")
-	err = ioutil.WriteFile(fn, b, 0640)
-	if err != nil {
+	if err = cfg.write("gen-marshallers.go", b); err != nil {
 		return err
 	}
 
@@ -47,13 +50,25 @@ func Package(cfg Config, fs []*ast.File) error {
 		return err
 	}
 
-	// Test files
+	// Test file
 	b, err = CorpusTests(cfg.Package, c)
 	if err != nil {
 		return err
 	}
-	fn = filepath.Join(cfg.Dir, "gen-marshallers_test.go")
-	return ioutil.WriteFile(fn, b, 0640)
+	if err = cfg.write("gen-marshallers_test.go", b); err != nil {
+		return err
+	}
+
+	// Fuzzer
+	b, err = Fuzzers(cfg.Package, c)
+	if err != nil {
+		return err
+	}
+	if err = cfg.write("gen-fuzz.go", b); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func name(n string) string {

@@ -72,6 +72,7 @@ func TestGeneratedFiles(t *testing.T) {
 			cmp := []string{
 				"gen-marshallers.go",
 				"gen-marshallers_test.go",
+				"gen-fuzz.go",
 			}
 			for _, path := range cmp {
 				t.Run(path, func(t *testing.T) {
