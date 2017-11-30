@@ -54,7 +54,7 @@ func WriteCorpus(c *Corpus, dir string) error {
 func writecorpus(c *Corpus, fs afero.Fs, namer func([]byte) string) error {
 	a := afero.Afero{Fs: fs}
 	for _, s := range c.Suites {
-		dir := s.Type
+		dir := filepath.Join(s.Type, "corpus")
 		if err := a.MkdirAll(dir, 0750); err != nil {
 			return errors.Wrap(err, "could not create directory")
 		}

@@ -35,7 +35,7 @@ func TestWriteCorpusReal(t *testing.T) {
 
 	// confirm the vector file exists
 	digest := "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824" // SHA256("hello")
-	path := filepath.Join(dir, "a", digest)
+	path := filepath.Join(dir, "a", "corpus", digest)
 	b, err := ioutil.ReadFile(path)
 	require.NoError(t, err)
 	assert.Equal(t, []byte("hello"), b)

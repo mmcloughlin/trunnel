@@ -59,8 +59,8 @@ func Package(cfg Config, fs []*ast.File) error {
 		return err
 	}
 
-	corpusDir := filepath.Join(cfg.OutputDirectory(), "testdata/corpus")
-	if err = tv.WriteCorpus(c, corpusDir); err != nil {
+	fuzzDir := filepath.Join(cfg.OutputDirectory(), "testdata/fuzz")
+	if err = tv.WriteCorpus(c, fuzzDir); err != nil {
 		return err
 	}
 

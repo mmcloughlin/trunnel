@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/mmcloughlin/trunnel/gen"
+	"github.com/mmcloughlin/trunnel/meta"
 	"github.com/mmcloughlin/trunnel/parse"
 )
 
@@ -14,7 +15,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "trunnel"
 	app.Usage = "Code generator for binary parsing"
-	app.Version = ""
+	app.Version = meta.GitSHA
 
 	app.Commands = []cli.Command{
 		build,
