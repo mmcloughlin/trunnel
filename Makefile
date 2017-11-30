@@ -11,8 +11,12 @@ install:
 	go install -ldflags $(LDFLAGS) $(CMD)
 
 .PHONY: generate
-generate: deps
+generate: tools
 	go generate -x ./...
+
+.PHONY: readme
+readme:
+	embedmd -w README.md
 
 .PHONY: lint
 lint:
@@ -30,6 +34,7 @@ fmt:
 cloc:
 	cloc $(SRC_EXCL_GEN)
 
-.PHONY: deps
-deps:
+.PHONY: tools
+tools:
 	go get -u github.com/mna/pigeon
+	go get -u github.com/campoy/embedmd

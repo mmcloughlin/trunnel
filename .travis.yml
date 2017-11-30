@@ -10,6 +10,9 @@ install:
   - go get github.com/alecthomas/gometalinter
   - gometalinter --install
 script:
-  - gometalinter --config=.gometalinter.json ./...
+  - make install
+  - make generate readme
+  - test -z "$(git status --porcelain)"
+  - make lint
   - overalls -project=github.com/mmcloughlin/trunnel -- -v -coverpkg=./... | grep -v 'no packages being tested depend on'
   - goveralls -coverprofile=overalls.coverprofile -service=travis-ci
