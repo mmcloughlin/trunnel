@@ -8,7 +8,7 @@ SRC_EXCL_GEN = $(shell find . -type f -name '*.go' -not -name 'gen-*.go')
 
 .PHONY: install
 install:
-	go install -ldflags $(LDFLAGS) $(CMD)
+	go install -a -ldflags $(LDFLAGS) $(CMD)
 
 .PHONY: generate
 generate: tools
