@@ -34,6 +34,10 @@ fmt:
 cloc:
 	cloc $(SRC_EXCL_GEN)
 
+doc/manual.html: ref/trunnel/doc/trunnel.md
+	mkdir -p doc
+	markdown  $^ > $@
+
 .PHONY: tools
 tools:
 	go get -u github.com/mna/pigeon

@@ -1,0 +1,813 @@
+<p><head>
+<title>Trunnel manual</title>
+   <style>
+     <!--
+        body { padding: 0 10% 0 15%; }
+        h1 { text-indent: -10%; }
+        h2 { text-indent: -7%; }
+        h3,h4,h5,h6 {text-indent: -3%; }
+     -->
+   </style>
+</head></p>
+
+<h1>Trunnel: a simple binary-format parser/encoder.</h1>
+
+<p>Trunnel is a tool that takes descriptions of binary formats and
+generates C code to parse and encode them.  It's designed for
+simplicity rather than maximum generality; if you need a tool that can
+parse nearly anything at the cost of a bit more complexity, have a
+look at "nail" instead.</p>
+
+<p>Here are the goals for Trunnel:</p>
+
+<ul>
+<li>Support all the binary formats used by Tor.</li>
+<li>Generate human-readable, obviously correct code.</li>
+<li>Generate secure code.</li>
+<li>Generate code that compiles without warnings on a wide variety of
+ compilers and platforms.</li>
+<li>Provide a somewhat idiot-proof API.</li>
+<li>Very high test coverage (currently, at 99% for code generator, 99% for
+ generated code, and 100% for support library).</li>
+<li>Be efficient enough for its performance not to matter for most
+ applications.</li>
+<li>Have a specification format that's easy to read and write.</li>
+</ul>
+
+<p>Here are some non-goals for Trunnel:</p>
+
+<ul>
+<li>Support every possible format.</li>
+<li>Parse formats that aren't byte-based.</li>
+<li>Parse formats that require backtracking.</li>
+<li>Run as fast as possible.</li>
+<li>Support very old versions of Python with the code generator.</li>
+<li>Support pre-ANSI C with the code generator.</li>
+<li>Generate optimal code</li>
+<li>Generate code with no redundant checks</li>
+<li>Handle input incrementally</li>
+</ul>
+
+<h2>1. About this document</h2>
+
+<p>I'll start with a quick example of the Trunnel workflow, and then move on to
+document the format of the files that Trunnel uses to define binary formats.
+After that, I'll briefly discuss the C functions that Trunnel exposes to the
+outside world.</p>
+
+<h2>2. Working with Trunnel</h2>
+
+<p>Here's a quick overview of what Trunnel can do for you.</p>
+
+<p>First, you write a simple format description of your binary formats in a
+trunnel file.  It can look something like:</p>
+
+<pre><code>const SHA256_LEN = 32;
+
+struct sha256_digest {
+   u8 digest[SHA256_LEN];
+}
+
+struct message {
+   u8 version;
+   u8 command;
+   u16 length IN [0..4096];
+   u8 body[length]
+   u8 digest[SHA256_LEN];
+}
+</code></pre>
+
+<p>Then you save that file with a name like <code>myformat.trunnel</code> and run trunnel
+on it.  (Right now, that's <code>python -m trunnel myformat.trunnel</code> .)  If the
+input file is well-formatted, Trunnel will generate a header file
+(<code>myformat.h</code>) and an implementation file (<code>myformat.c</code>).</p>
+
+<p>To use this code in your program, include the header file and build and link
+with the C file.  You'll also need to distribute both generated code files,
+along with trunnel-impl.h, trunnel.h, and trunnel.c.  (Trunnel will
+emit those files for you when you run <code>python -m trunnel
+--write-c-files</code>.)</p>
+
+<p>Then you can write code that uses the generated functions documented in
+myformat.h.</p>
+
+<h2>3. Writing trunnel definitions</h2>
+
+<p>A trunnel definition file can contain any number of three types of
+definitions: constants, structure declarations, and extern declarations.</p>
+
+<p>Both kinds of C comments are allowed: C99 comments that start with a
+<code>//</code>, and the C comments that start with a <code>/*</code>.  Additionally, you
+can insert doxygen-style comments that start with <code>/**</code> before any
+structure, constant, or structure member.  These will be included
+verbatim in the output file.</p>
+
+<p>Constants are declared with:</p>
+
+<pre><code>const &lt;CONST_NAME&gt; = &lt;VAL&gt; ;
+</code></pre>
+
+<p>As in:</p>
+
+<pre><code>const N_ELEMENTS = 100;
+const U8_MAX = 0xff;
+</code></pre>
+
+<p>Constants can be used in the file anywhere that a number can be used.  The
+name of a constant must be a C identifier in all-caps.</p>
+
+<p>Structure declarations define a format that trunnel can parse.  They take
+the form of:</p>
+
+<pre><code>struct &lt;ID&gt; {
+  &lt;member&gt;
+  &lt;member&gt;
+  ...
+}
+</code></pre>
+
+<p>As in:</p>
+
+<pre><code>struct rgb {
+   u8 r;
+   u8 g;
+   u8 b;
+}
+</code></pre>
+
+<p>The names of structures and their members may be any valid C
+identifier containing at least one lowercase letter.  Structures can
+contain 0, 1, or more members.  We define the possible member types
+below.</p>
+
+<p>An extern structure definition takes the form of:</p>
+
+<pre><code>extern struct &lt;ID&gt;;
+</code></pre>
+
+<p>As in:</p>
+
+<pre><code>extern struct message;
+</code></pre>
+
+<p>An extern struct definition declares that a structure will be defined in
+another trunnel file, and that it's okay to use it in this trunnel file.</p>
+
+<p>Finally, an options definition takes the form of:</p>
+
+<pre><code>trunnel options &lt;ID_LIST&gt; ;
+</code></pre>
+
+<p>As in:</p>
+
+<pre><code>trunnel options foo, bar, baz;
+</code></pre>
+
+<p>These options are used to control code generation.</p>
+
+<h3>Structure members: integers</h3>
+
+<p>All integers are given as 8, 16, 32, or 64-bit values:</p>
+
+<pre><code>u8 value_a;
+u16 value_b;
+u32 value_c;
+u64 value_d;
+</code></pre>
+
+<p>These values are encoded and parsed in network (big-endian) order.  The
+corresponding values in C are generated as <code>uint8_t</code>, <code>uint16_t</code>, <code>uint32_t</code>,
+and <code>uint64_t</code>.</p>
+
+<p>(Signed values and little-endian values aren't supported.)</p>
+
+<p>You can specify constraints for an integer value by providing a list of
+one or more values and ranges.</p>
+
+<pre><code>u8 version_num IN [ 4, 5, 6 ];
+u16 length IN [ 0..16384 ];
+u16 length2 IN [ 0..MAX_LEN ];
+u8 version_num2 IN [ 1, 2, 4..6, 9..128 ];
+</code></pre>
+
+<p>In a newly constructed structure, all integer fields are initialized to their
+lowest constrained value (or to 0 if no constraint is given).</p>
+
+<h3>Structure members: Nested structures</h3>
+
+<p>You can specify that one structure contains another, as in:</p>
+
+<pre><code>struct inner inner_val;
+</code></pre>
+
+<p>You can also define the structure itself inline, as in:</p>
+
+<pre><code>struct inner {
+   u16 a;
+   u16 b;
+} inner_val;
+</code></pre>
+
+<p>It's okay to use a structure before it's defined, but Trunnel does require
+that structure definitions be non-circular.</p>
+
+<p>In a newly constructed structure, all structure fields are initialized to
+NULL.</p>
+
+<h3>Structure members: NUL-terminated strings</h3>
+
+<p>You can specify a string whose length is determined by a terminating 0 (NUL)
+byte, with:</p>
+
+<pre><code>nulterm &lt;ID&gt;;
+</code></pre>
+
+<p>As in:</p>
+
+<pre><code>nulterm string;
+</code></pre>
+
+<p>In a newly constructed structure, all nul-terminated string fields are
+initialized to NULL.</p>
+
+<h3>Structure members: fixed-length arrays</h3>
+
+<p>A structure can contain fixed-length arrays of integers, structures, or
+(8-bit) characters.  The lengths of the arrays can be expressed as
+decimal literals, hexadecimal literals, or constants:</p>
+
+<pre><code>u8 ipv6_addr[16];
+u32 elements[N_ELEMENTS];
+struct rgb colors[2];
+char hostname[0x40];
+</code></pre>
+
+<p>Each of these types is parsed and encoded by parsing or encoding its
+members the specified number of times.  Strings are not expected to be
+NUL-terminated in the binary format.</p>
+
+<p>Fixed-length arrays of integers are represented as arrays of the appropriate
+uint*_t type. Fixed-length arrays of structures are represented as arrays of
+pointers to that structure type.  Fixed-length arrays of char are represented
+as having one extra byte at the end, so that we can ensure that the C
+representation of the array always ends with NUL -- internal NULs are
+permitted, however.</p>
+
+<p>In newly constructed structures, as before, integers are initialized to 0 and
+structures are initialized to <code>NUL</code>.  Character arrays are initialized to be
+filled with 0-valued bytes.</p>
+
+<h3>Structure members: variable-length arrays</h3>
+
+<p>A structure can contain arrays of integers, structures, or characters whose
+lengths depend on an earlier integer-valued field:</p>
+
+<pre><code>u16 length;
+
+u8 bytes[length];
+u64 bignums[length];
+struct rgb colors[length];
+char string[length];
+</code></pre>
+
+<p>Each of these types is parsed and encoded by parsing or encoding its
+members the specified number of times.  Strings are not expected to be
+NUL-terminated in the binary format.</p>
+
+<p>You can also specify that a variable-length array continues to the end of the
+containing structure or union by leaving its length field empty:</p>
+
+<pre><code>u8 remaining_bytes[];
+
+u32 remaining_words[];
+
+struct rgb remaining_colors[];
+
+char remaining_text[];
+</code></pre>
+
+<p>Of course, you couldn't end a structure with all four of those: they can't
+<em>all</em> extend to the end of a structure.  We also require that these "greedy"
+arrays consume their input completely: If you specify <code>u32
+remaining_words[];</code>, then the input must contain a multiple of 4 bytes, or it
+will be invalid.</p>
+
+<p>Variable-length arrays are represented internally with a dynamic array type
+that expands as needed to hold all its elements.  You can inspect and modify
+them through a set of accessor functions documented later on.</p>
+
+<p>In newly constructed structures, all variable-length arrays are empty.</p>
+
+<p>It's an error to try to encode a variable-length array with a length field if
+that array's length field doesn't match its actual length.</p>
+
+<h3>Structure members: zero-length indices into the input</h3>
+
+<p>Sometimes you need to record the position in the input the corresponds to
+a position in the structure.  You can use an <code>@ptr</code> field to record
+a position within a structure when parsing it:</p>
+
+<pre><code>struct s {
+  nulterm unsigned_header;
+  @ptr start_of_signed_material;
+  u32 bodylen;
+  u8 body[bodylen];
+  u64 flags;
+  @ptr end_of_signed_material;
+  u16 signature_len;
+  u8 signature[signature_len];
+}
+</code></pre>
+
+<p>When an object of this type is parsed, then <code>start_of_signed_material</code>
+and <code>end_of_signed_material</code> will get set to pointers into the input.
+These pointers are only set when the input is parsed; you don't need
+to set them to encode the object.</p>
+
+<h3>Structure members: unions</h3>
+
+<p>You can specify that different elements should be parsed based on some
+earlier integer field:</p>
+
+<pre><code> u8 tag;
+ union addr[tag] {
+   4 : u32 ipv4_addr;
+   5 : ; // Nothing to parse here.
+   6 : u8 ipv6_addr[16];
+   0xf0,0xf1 : u8 hostname_len;
+          char hostname[hostname_len];
+   0xF2 .. 0xFF : struct extension ext;
+   default : fail;
+ };
+</code></pre>
+
+<p>Only one variant of the union, depending on the given tag value, is parsed
+or encoded.</p>
+
+<p>You can specify the behavior of the union when no tag value is matched using
+the <code>default:</code> label.  The <code>fail</code> production is a special value that causes
+parsing and encoding to always fail for a given tag value. The <code>default: fail;</code>
+case is understood unless some other behavior for default is given.</p>
+
+<p>The fields in a union are represented by storing them in the generated
+structure.  (To avoid user errors, no C union is generated.)  Their names are
+prefixed with the name of the union, so <code>ipv4_addr</code> would be stored as
+<code>addr_ipv4_addr</code>, and so on.</p>
+
+<p>When encoding a union, only the fields referenced by the actual tag value are
+inspected: it's okay to encode if the other fields are invalid.</p>
+
+<h3>Structure members: unions with length constraints</h3>
+
+<p>Tagged unions are pretty useful for describing typed fields.  But many users
+of typed fields need to support unknown types in order to future-proof
+themselves against later extensions.  You can do this as:</p>
+
+<pre><code>u8 tag;
+u16 length;
+union addr[tag] with length length {
+   4 : u32 ipv4_addr;
+   6 : u8 ipv6_addr[16];
+   7 : ignore;
+   0xEE : u32 ipv4_addr;
+          ...;
+   0xEF : u32 ipv4_addr;
+          u8 remainder[];
+   0xF0 : char hostname[];
+   default: u8 unrecognized[];
+};
+</code></pre>
+
+<p>Here, the union is required to take up a number of bytes dependent on the
+value of <code>length</code>.  The <code>hostname</code> and <code>unrecognized</code> cases extend to the end
+of the union.  The <code>...</code> in the <code>0xEE</code> case indicates that extra bytes are
+accepted and ignored, whereas in the <code>0xEF</code> case, extra bytes are accepted and
+stored.  Unless otherwise specified, the length field must match the length
+of the fields in the union exactly.</p>
+
+<p>When encoding a union of this kind, you do <em>not</em> need to set the 'length'
+field; trunnel will fill it in for you in the output automatically based on
+the actual length.</p>
+
+<p>(<em>In a future version of Trunnel</em>, length constraints might be supported
+independently of unions; the code is orthogonal internally.)</p>
+
+<h3>Structure variants: end-of-string constraints</h3>
+
+<p>By default, trunnel allows extra data to appear after the end of a
+structure when parsing it from the input.  To suppress this behavior
+for a given structure, you can give an end-of-string constraint:</p>
+
+<pre><code>struct fourbytes {
+   u16 x;
+   u16 y;
+   eos;
+}
+</code></pre>
+
+<p>(<em>This feature might go away</em> in a future version if it doesn't turn
+out to be useful.)</p>
+
+<h3>Fields that extend up to a certain point before the end of the structure</h3>
+
+<p>Some data formats have fixed-width fields at the end, and
+indeterminate-extent fields in the middle.  For example, you might
+have an "encrypted message" format where the first 16 bytes are a
+salt, the last 32 bytes are a message authentication code, and
+everything in the middle is an encrypted message.  You can express
+this in Trunnel with:</p>
+
+<pre><code>struct encrypted {
+   u8 salt[16];
+   u8 message[..-32];
+   u8 mac[32];
+}
+</code></pre>
+
+<p>The "..-32" notation means that the array should try to consume
+everything up to but not including the last 32 bytes of the message.</p>
+
+<p>You can also use this notation to indicate the extent of a union:</p>
+
+<pre><code>struct encrypted {
+   u8 type;
+   union u[type] with length ..-32 {
+      1: u8 bytes[];
+      2: u8 salt[16];
+         u8 other_bytes[];
+   }
+   u64 data[4];
+}
+</code></pre>
+
+<h3>Parameterizing structures</h3>
+
+<p>Some protocols have the type or length of some structure fields depend
+on settings elsewhere in the protocol.  For example, you might have a
+TLS-like protocol where each encrypted records's format depends on
+some session parameters.</p>
+
+<p>To support this, trunnel provides context-dependent objects:</p>
+
+<pre><code>context stream_settings {
+   u8 block_mode;
+   u8 iv_len;
+   u8 block_len;
+   u8 mac_len;
+}
+
+struct encrypted_record with context stream_settings {
+   u8 iv[stream_settings.iv_len];
+   union msg[stream_settings.block_mode] {
+      0: u16 n_bytes; u8 bytes[n_bytes];
+      1: u16 n_blocks; struct block[n_blocks];
+   };
+   u8 mac[stream_settings.maclen];
+}
+
+struct block with context stream_settings {
+   u8 body[stream_settings.block_len]
+}
+</code></pre>
+
+<p>In the example above, the lengths of the <code>mac</code>, <code>iv</code>, and <code>body</code>
+fields do not depend on values within the structures themselves;
+instead, they depend on the values set within the <code>stream_settings</code>
+context.  It's similar for the tag of the <code>msg</code> union: it depends on a
+value in the stream_settings context.</p>
+
+<p>Note also that the <code>stream_settings</code> context can propagate from the
+<code>encrypted_record</code> structure to the <code>block</code> structure it contains.  It
+is an error to include a context-dependent structure in an environment
+that doesn't declare the same context dependency.</p>
+
+<p>Contexts may only include integer types, and may not declare integer
+restrictions.</p>
+
+<h2>4. Controlling code generation with options</h2>
+
+<p>Two options are supported in Trunnel right now:</p>
+
+<pre><code>trunnel option opaque;
+trunnel option very_opaque;
+</code></pre>
+
+<p>The <code>opaque</code> option makes the generated structures not get exposed in the
+generated header files by default.  You can override this and expose a single
+structure name by defining <code>TRUNNEL_EXPOSE_&lt;STRUCTNAME&gt;_</code> in your C before
+including the generated header.</p>
+
+<p>The <code>very_opaque</code> option prevents the generated structures from being put
+into the generated header files at all: you will only be able to access their
+fields with the generated accessor functions.</p>
+
+<h2>5. Using Trunnel's generated code</h2>
+
+<p>When you run Trunnel on <code>module.trunnel</code>, it generates <code>module.c</code> and
+<code>module.h</code>.  Your program should include <code>module.h</code>, and compile and link
+<code>module.c</code>.</p>
+
+<p>For each structure you define in your trunnel file, Trunnel will generate a
+structure with an <code>_st</code> suffix and a typedef with a <code>_t</code> suffix.  For
+example, <code>struct rgb</code> in your definition file wile generate <code>struct rgb_st;</code>
+and <code>typedef struct rgb_st rgb_t;</code> in C.</p>
+
+<p>In addition to consulting the documentation below, you can also read the
+comments in the generated header file to learn how to use the generated
+functions.</p>
+
+<p>In the examples below, I'll be assuming a structure called <code>example</code>, defined
+with something like:</p>
+
+<pre><code>struct example {
+   u16 shortword;
+   /* Contents go here... */
+}
+</code></pre>
+
+<h3>Generated code: creating and destroying objects</h3>
+
+<p>Every object gets a <code>new</code> and a <code>free</code> function:</p>
+
+<pre><code> example_t *example_new(void);
+ void example_free(example_t *obj);
+</code></pre>
+
+<p>The <code>example_new()</code> function creates a new <code>example_t</code>, with its fields
+initialized to 0, NULL, or to their lowest legal value (in the cases of
+constrained integers).</p>
+
+<p>The <code>example_free()</code> function frees the provided object, along with all the
+objects inside it.  It's okay to call it with NULL.</p>
+
+<h3>Generated code: encoding an object</h3>
+
+<p>If you have a filled-in object, you can encode it into a buffer:</p>
+
+<pre><code> ssize_t example_encode(uint8_t *buf, size_t buf_len, const example_t *obj);
+</code></pre>
+
+<p>The <code>buf_len</code> parameter describes the number of available bytes in <code>buf</code> to
+use for encoding <code>obj</code>.  On success, this function will return the number of
+bytes that it used.  On failure, the function will return -2 on a truncated
+result, where providing a longer <code>buf_len</code> might make it succeed, and will
+return -1 if there is an error that prevents encoding the object entirely.</p>
+
+<p>You can find out the required buffer length before the encoding, if you like:</p>
+
+<pre><code> ssize_t example_encoded_len(const example_t *obj);
+</code></pre>
+
+<p>This function returns a negative value on an error.  On success, it
+returns the suggested length of the buffer to allocate for encoding
+'obj'.  Note that this number may be an underestimate or an
+overestimate: you still need to check for truncation when encoding.</p>
+
+<h3>Generated code: checking an object for correctness</h3>
+
+<p>If you want to find out whether you can encode an object, or find out why an
+encode operation has just failed, you can call:</p>
+
+<pre><code> const char *example_check(const example_t *obj);
+</code></pre>
+
+<p>This function returns <code>NULL</code> if the object is correct and encodeable, and
+returns a string explaining what has gone wrong otherwise.</p>
+
+<h3>Generated code: parsing an object</h3>
+
+<p>Here's the big one: parsing an object form a binary string.</p>
+
+<pre><code>ssize_t example_parse(example_t **out, const uint8_t *inp, size_t inp_len);
+</code></pre>
+
+<p>Here we take up to <code>inp_len</code> bytes from the buffer <code>inp</code>.  On success, this
+function returns the number of bytes actually consumed, and sets <code>*out</code> to a
+newly allocated <code>example_t</code> holding the parsed object.  On failure, it returns
+-1 if the input was completely invalid, and -2 if it was possibly truncated.</p>
+
+<p>Note that truncation detection depends on the actual layout of your
+objects.  Some valid encoded objects are prefixes of other encoded
+objects.  In these cases, there's no way to tell that truncation has
+occurred.</p>
+
+<h3>Generated code: accessor functions</h3>
+
+<p>For each struct member, Trunnel creates a set of set and get functions to
+inspect and change its value.  If you've specified the <code>opaque</code> or <code>very_opaque</code>
+option, these are the only (recommended) way to view or modify a structure.</p>
+
+<p>Each type has its own set of accessors.</p>
+
+<p>By convention, the set accessors (the ones that modify the objects) return <code>0</code>
+on success and <code>-1</code> on failure.  Additionally on failure, they set an error
+code on the object that prevents the object from being encoded unless the
+error code is cleared.</p>
+
+<p><strong>Integers</strong> and <strong>nul-terminated strings</strong> have a <code>get</code> and <code>set</code> function:</p>
+
+<pre><code> struct example {
+    u8 a;
+    u16 b in [ 5..5000 ];
+    nulterm s;
+ }
+</code></pre>
+
+<p>will produce these self-explanatory accessor functions:</p>
+
+<pre><code> uint8_t example_get_a(const example_t *ex);
+ int example_set_a(const example_t *ex, uint8_t val);
+ uint16_t example_get_b(const example_t *ex);
+ int example_set_b(const example_t *ex, uint16_t val);
+ const char *example_get_s(const example_t *ex);
+ int example_set_s(const example_t *ex, const char *val);
+</code></pre>
+
+<p>Note that the string set function makes a copy of its input string.</p>
+
+<p><strong>Structures</strong> have a get, set, and set0 function:</p>
+
+<pre><code> struct example {
+    struct rgb xyz;
+ }
+</code></pre>
+
+<p>becomes:</p>
+
+<pre><code> rgb_t *example_get_xyz(example_t *ex);
+ int example_set_xyz(example_t *ex, rgb_t *val);
+ int example_set0_xyz(example_t *ex, rgb_t *val);
+</code></pre>
+
+<p>The <code>set</code> and <code>set0</code> functions behave identically, except that the set function
+frees the previous value of the xyz field (if any), whereas the set0 function
+will overwrite it.</p>
+
+<p><strong>All arrays</strong> have functions to inspect them and change their members, so
+that:</p>
+
+<pre><code>struct example {
+   struct rgb colors[16];
+}
+// OR
+struct example {
+   u8 n;
+   struct rgb colors[n];
+}
+</code></pre>
+
+<p>will both produce:</p>
+
+<pre><code>size_t example_getlen_colors(const example_t *example);
+rgb_t **example_getarray_colors(const example_t *example);
+rgb_t *example_get_colors(const example_t *example, size_t idx);
+int example_set_colors(example_t *example, size_t idx, rgb_t *val);
+int example_set0_colors(example_t *example, size_t idx, rgb_t *val);
+</code></pre>
+
+<p>In this case, the getlen function returns the length of the array, the
+getarray function returns a pointer to the array itself, and the <code>get</code> and
+<code>set</code> and <code>set0</code> functions access or replace the value of the array at a
+given index.  The set0 function is only generated in the case of an array of
+structures: when it is generated, <code>set</code> frees the old value of the array at
+that index (if any), and <code>set0</code> does not.</p>
+
+<p><strong>Variable-length arrays</strong> additionally have functions that adjust their
+lengths, so that :</p>
+
+<pre><code> struct example {
+     u8 n;
+     struct rgb colors[n];
+ }
+</code></pre>
+
+<p>will also produce:</p>
+
+<pre><code> int example_add_colors(example_t *example, rgb_t *val);
+ int example_setlen_colors(example_t *example, size_t newlen);
+</code></pre>
+
+<p>The <code>add</code> function appends a new item to the end of the array.  The <code>setlen</code>
+function changes the current length of the array.  (If the length increases,
+the new fields are padded with <code>0</code> or <code>NULL</code> as appropriate.  If the length
+decreases, the removed members are freed if necessary.)</p>
+
+<p>Note that the length field <code>n</code> is not automatically kept in sync with the
+length of the dynamic array <code>colors</code>.</p>
+
+<p>Finally, <strong>variable-length arrays of char</strong> have extra functions to help you
+access them as variable-length strings:</p>
+
+<pre><code>struct example {
+   u8 n;
+   char value[n];
+}
+</code></pre>
+
+<p>produces:</p>
+
+<pre><code>const char *example_getstr_value(example_t *obj);
+int example_setstr_value(example_t *obj, const char *val);
+int example_setstr0_value(example_t *obj, const char *val, size_t len);
+</code></pre>
+
+<p>The <code>getstr</code> function is identical to <code>getarray</code>, except that it guarantees a
+NUL-terminated result.  (It can return <code>NULL</code> if it fails to NUL-terminate the
+answer.)  This time the <code>setstr0</code> function takes a new value and its length;
+the <code>setstr</code> function just takes a value and assumes it is NUL-terminated.</p>
+
+<h3>Generated code: the impact of contexts</h3>
+
+<p>If you declare context-dependent structures, Trunnel will add extra
+context arguments to the generated <code>encode</code>, <code>parse</code>, and <code>check</code>
+functions.  For example, if you say:</p>
+
+<pre><code>context len {
+   u16 len;
+}
+struct msg with context len {
+   u8 tag;
+   u16 items[len.len];
+}
+</code></pre>
+
+<p>Then trunnel will generate those functions with the protptypes:</p>
+
+<pre><code>ssize_t msg_encode(uint8_t *buf, size_t buf_len, msg_t *obj,
+                   const len_t *len_ctx);
+ssize_t msg_encoded_len(msg_t *obj, const len_t *len_ctx);
+const char *msg_check(const msg_t *obj, const len_t *len_ctx);
+ssize_t msg_parse(msg_t **out, const uint8_t *inp, size_t inp_len,
+                  const len_t *len_ctx);
+</code></pre>
+
+<p>Trunnel will also generate a declaration for the context type, along
+with <code>new</code>, <code>free</code>, and accessor functions for it:</p>
+
+<pre><code>struct len_t {
+   uint16_t len;
+};
+len_t *len_new(void);
+void len_free(len_t *len);
+int len_set_len(len_t *len, uint16_t newval);
+uint16_t len_get_len(const len_t *len);
+</code></pre>
+
+<h3>Extending trunnel</h3>
+
+<p>You can extend Trunnel using the 'extern struct' mechanism described above.
+All you need to do is provide your own structure definition, along with
+<code>parse</code>, <code>encode</code>, <code>free</code>, and <code>check</code> functions.  The generated trunnel code
+will use those functions as appropriate to access your extended type.</p>
+
+<h3>Overriding allocators and other internal functions</h3>
+
+<p>By default, trunnel uses the libc malloc implementation for its
+allocation.  You can override this by defining a "trunnel-local.h"
+file, and defining the TRUNNEL<em>LOCAL</em>H macro when compiling any
+trunnel C files.  When you do this, your "trunnel-local.h" will get
+included before any generated trunnel code.</p>
+
+<p>To replace the allocator, you must use #define to declare replacements
+for the following functions:</p>
+
+<ul>
+<li><code>trunnel_malloc</code></li>
+<li><code>trunnel_calloc</code></li>
+<li><code>trunnel_realloc</code> OR <code>trunnel_reallocarray</code></li>
+<li><code>trunnel_free_</code> (note trailing underscore</li>
+<li><code>trunnel_strdup</code></li>
+</ul>
+
+<p>These functions work equivalently to their libc counterparts, and take
+arguments in the same order.</p>
+
+<p>You can also replace trunnel's internal-error behavior by defining one
+or more of these:</p>
+
+<ul>
+<li><code>trunnel_abort</code></li>
+<li><code>trunnel_assert</code></li>
+</ul>
+
+<p>These macros are also expected to behave equivalently to their libc
+counterparts.  They are only invoked in the case of an internal
+programming error in Trunnel -- if Trunnel is implemented correctly,
+they should be unreachable.</p>
+
+<p>Finally, if you want to ensure that all objects freed by trunnel are
+wiped from memory before they're freed, you can define a
+<code>trunnel_memwipe</code> function.  For example:</p>
+
+<pre><code>#define trunnel_memwipe(mem, len)  memset_s((mem), 0, (len));
+</code></pre>
+
+<p>Note that the standard caveats about wiping memory apply: if this
+matters to you, you should know why you should be using memset<em>s or
+explicit</em>bzero instead of memset here.</p>
+
+<h3>Notes on thread-safety</h3>
+
+<p>There are no global structures and there are no locks.  It's up to you to
+avoid calling multiple functions at once on the same structure.  If you
+manage to avoid that, Trunnel should be thread-safe.</p>
