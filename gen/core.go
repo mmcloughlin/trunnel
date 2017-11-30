@@ -20,15 +20,29 @@ type Config struct {
 	Seed    int64  // seed for corpus generation
 }
 
+// PackageName returns the name of the generated package.
+func (c Config) PackageName() string {
+	return c.Package
+}
+
+// OutputDirectory returns the configured output directory.
+func (c Config) OutputDirectory() string {
+	return c.Dir
+}
+
+// Path returns a path to rel within the configured output directory.
+func (c Config) Path(rel string) string {
+	return filepath.Join(c.OutputDirectory(), rel)
+}
+
 func (c Config) write(name string, b []byte) error {
-	fn := filepath.Join(c.Dir, name)
-	return ioutil.WriteFile(fn, b, 0640)
+	return ioutil.WriteFile(c.Path(name), b, 0640)
 }
 
 // Package generates a Go package for the given files.
 func Package(cfg Config, fs []*ast.File) error {
 	// Marshaller file
-	b, err := Marshallers(cfg.Package, fs)
+	b, err := Marshallers(cfg.PackageName(), fs)
 	if err != nil {
 		return err
 	}
@@ -45,13 +59,13 @@ func Package(cfg Config, fs []*ast.File) error {
 		return err
 	}
 
-	corpusDir := filepath.Join(cfg.Dir, "testdata/corpus")
+	corpusDir := filepath.Join(cfg.OutputDirectory(), "testdata/corpus")
 	if err = tv.WriteCorpus(c, corpusDir); err != nil {
 		return err
 	}
 
 	// Test file
-	b, err = CorpusTests(cfg.Package, c)
+	b, err = CorpusTests(cfg.PackageName(), c)
 	if err != nil {
 		return err
 	}
@@ -60,7 +74,7 @@ func Package(cfg Config, fs []*ast.File) error {
 	}
 
 	// Fuzzer
-	b, err = Fuzzers(cfg.Package, c)
+	b, err = Fuzzers(cfg.PackageName(), c)
 	if err != nil {
 		return err
 	}

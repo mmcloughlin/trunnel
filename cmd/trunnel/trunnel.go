@@ -1,13 +1,11 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 
 	"github.com/urfave/cli"
 
-	"github.com/mmcloughlin/trunnel/ast"
 	"github.com/mmcloughlin/trunnel/gen"
 	"github.com/mmcloughlin/trunnel/parse"
 )
@@ -29,29 +27,37 @@ func main() {
 
 // build command
 var (
-	out io.Writer = os.Stdout
+	cfg gen.Config
 
 	build = cli.Command{
 		Name:      "build",
-		Usage:     "Generate go code from trunnel",
-		ArgsUsage: "trunnelfile",
+		Usage:     "Generate go package from trunnel",
+		ArgsUsage: "<trunnelfile>...",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:        "pkg, p",
+				Usage:       "package name",
+				Destination: &cfg.Package,
+			},
+			cli.StringFlag{
+				Name:        "dir, d",
+				Usage:       "output directory",
+				Value:       ".",
+				Destination: &cfg.Dir,
+			},
+		},
 		Action: func(c *cli.Context) error {
-			filename := c.Args().First()
-			if filename == "" {
-				return cli.NewExitError("missing trunnel filename", 1)
+			filenames := c.Args()
+			if len(filenames) == 0 {
+				return cli.NewExitError("missing trunnel filenames", 1)
 			}
 
-			f, err := parse.File(filename)
+			fs, err := parse.Files(filenames)
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
 
-			src, err := gen.Marshallers("pkg", []*ast.File{f})
-			if err != nil {
-				return cli.NewExitError(err, 1)
-			}
-
-			if _, err := out.Write(src); err != nil {
+			if err = gen.Package(cfg, fs); err != nil {
 				return cli.NewExitError(err, 1)
 			}
 
