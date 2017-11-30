@@ -34,8 +34,8 @@ fmt:
 cloc:
 	cloc $(SRC_EXCL_GEN)
 
-doc/manual.html: ref/trunnel/doc/trunnel.md
-	mkdir -p doc
+docs/manual.html: ref/trunnel/doc/trunnel.md
+	mkdir -p docs
 	markdown  $^ > $@
 
 .PHONY: tools
