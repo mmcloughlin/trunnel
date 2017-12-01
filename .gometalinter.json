@@ -26,7 +26,8 @@
     "Skip": [
         "parse/internal/parser",
         "gen/tests",
-        "internal/test"
+        "internal/test",
+        "examples"
     ],
     "LineLength": 120
 }
