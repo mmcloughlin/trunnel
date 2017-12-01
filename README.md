@@ -85,3 +85,19 @@ func ParseColor(data []byte) (*Color, error) {
 	return c, nil
 }
 ```
+
+## Features
+
+Integer fields may have constraints.
+
+[embedmd]:# (examples/date/date.trunnel c)
+```c
+struct date {
+   u16 year IN [ 1970..65535 ];
+   u8 month IN [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ];
+   u8 day IN [ 1,2,3..31 ];
+};
+```
+
+Please consult the [trunnel manual](http://mmcloughlin.com/trunnel/manual.html)
+for the full feature set.
