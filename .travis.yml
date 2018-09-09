@@ -9,8 +9,7 @@ install:
 - go get -t ./...
 - go get github.com/go-playground/overalls
 - go get github.com/mattn/goveralls
-- go get github.com/alecthomas/gometalinter
-- gometalinter --install
+- curl https://git.io/vp6lP | sh
 script:
 - make install
 - trunnel -v
