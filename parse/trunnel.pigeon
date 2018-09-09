@@ -367,8 +367,7 @@ ExtentSpec <- "..." _ ';' {
   return r, nil
 }
 
-StructRef <- s:StructDecl {
-  c.addLingeringDeclaration(s)
+StructRef <- s:StructDecl #{ c.addLingeringDeclaration(s); return nil; } {
   return &ast.StructRef{Name: s.(*ast.Struct).Name}, nil
 } / n:StructIdentifier {
   return &ast.StructRef{Name: n.(string)}, nil
