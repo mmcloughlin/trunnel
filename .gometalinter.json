@@ -16,8 +16,6 @@
         "errcheck",
         "golint",
         "lll",
-        "gofmt",
-        "goimports",
         "misspell",
         "gosimple",
         "nakedret"
