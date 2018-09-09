@@ -8,7 +8,23 @@ for the Tor project](https://gitweb.torproject.org/trunnel.git).
 [![Coverage](https://img.shields.io/coveralls/mmcloughlin/trunnel.svg?style=flat-square)](https://coveralls.io/r/mmcloughlin/trunnel)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mmcloughlin/trunnel?style=flat-square)](https://goreportcard.com/report/github.com/mmcloughlin/trunnel)
 
-## Getting Started
+## Description
+
+Writing parsers for binary formats is error-prone and tedious. Critical security
+vulnerabilities are frequently found in parser code, especially in low-level
+languages such as C. Trunnel is a [domain-specific
+language](https://en.wikipedia.org/wiki/Domain-specific_language) for describing
+binary formats and a parser generator for those formats.
+
+Trunnel was [initially
+designed](https://lists.torproject.org/pipermail/tor-dev/2014-August/007355.html)
+and [implemented](https://gitweb.torproject.org/trunnel.git) by Nick Mathewson
+for the [Tor Project](https://www.torproject.org/). This Golang port is intended
+to support efforts to implement a [Tor Relay in
+Go](https://github.com/mmcloughlin/pearl), with the goal of sharing trunnel
+files with the core Tor codebase.
+
+## Quick Start
 
 Install `trunnel` with
 
