@@ -1,22 +1,23 @@
 language: go
 sudo: false
 go:
-  - 1.8.x
-  - 1.9.x
+- 1.x
+- 1.9.x
+- 1.10.x
+- 1.11.x
 install:
-  - go get -t ./...
-  - go get github.com/go-playground/overalls
-  - go get github.com/mattn/goveralls
-  - go get github.com/alecthomas/gometalinter
-  - gometalinter --install
+- go get -t ./...
+- go get github.com/go-playground/overalls
+- go get github.com/mattn/goveralls
+- go get github.com/alecthomas/gometalinter
+- gometalinter --install
 script:
-  - make install
-  - trunnel -v
-
-  - make generate readme
-  - git status
-  - test -z "$(git status --porcelain)"
-
-  - make lint
-  - overalls -project=github.com/mmcloughlin/trunnel -- -v -coverpkg=./... | grep -v 'no packages being tested depend on'
-  - goveralls -coverprofile=overalls.coverprofile -service=travis-ci
+- make install
+- trunnel -v
+- make generate readme
+- git status
+- test -z "$(git status --porcelain)"
+- make lint
+- overalls -project=github.com/mmcloughlin/trunnel -- -v -coverpkg=./... | grep -v
+  'no packages being tested depend on'
+- goveralls -coverprofile=overalls.coverprofile -service=travis-ci
