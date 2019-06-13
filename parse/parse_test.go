@@ -11,9 +11,9 @@ import (
 
 func TestEmpty(t *testing.T) {
 	empty := map[string]string{
-		"blank":  "",
-		"spaces": "    ",
-		"tab":    "\t",
+		"blank":               "",
+		"spaces":              "    ",
+		"tab":                 "\t",
 		"single_line_comment": "// nothing here",
 		"multi_line_comment":  "   /* or here*/\t",
 	}

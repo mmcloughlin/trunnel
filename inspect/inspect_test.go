@@ -102,7 +102,8 @@ func TestResolverAddFileErrors(t *testing.T) {
 				{Name: "a", Members: []ast.Member{
 					&ast.Field{Name: "x", Type: ast.U8},
 				}},
-			}},
+			},
+		},
 		{Contexts: []*ast.Context{{Name: "a"}}},
 		{Constants: []*ast.Constant{{Name: "a"}}},
 	}

@@ -20,11 +20,11 @@ readme:
 
 .PHONY: lint
 lint:
-	gometalinter --config=.gometalinter.json ./...
+	golangci-lint run
 
 .PHONY: imports
 imports:
-	goimports -w -local $(PKG) $(SRC)
+	gofumports -w -local $(PKG) $(SRC)
 
 .PHONY: fmt
 fmt:
@@ -40,5 +40,8 @@ docs/manual.html: ref/trunnel/doc/trunnel.md
 
 .PHONY: tools
 tools:
-	go get -u github.com/mna/pigeon
-	go get -u github.com/campoy/embedmd
+	go get -u \
+		github.com/mna/pigeon \
+		github.com/campoy/embedmd \
+		mvdan.cc/gofumpt/gofumports
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.17.1

@@ -1,0 +1,11 @@
+linters:
+    enable-all: true
+    disable:
+    - scopelint
+    - maligned
+    - lll
+    - gosec
+    - prealloc
+    - unparam
+    - gochecknoglobals
+    - gochecknoinits
