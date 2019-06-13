@@ -21,7 +21,7 @@ func TestParseEmpty(t *testing.T) {
 func TestParseShortCases(t *testing.T) {
 	tags := []byte{2, 3, 4, 6}
 	for _, tag := range tags {
-		_, err := new(Basic).Parse([]byte{byte(tag), 1})
+		_, err := new(Basic).Parse([]byte{tag, 1})
 		assert.Error(t, err)
 	}
 }
