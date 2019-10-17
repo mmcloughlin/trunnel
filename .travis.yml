@@ -3,7 +3,6 @@ sudo: false
 go:
 - 1.x
 - 1.12.x
-- 1.11.x
 install:
 - go get -t ./...
 - go get github.com/go-playground/overalls

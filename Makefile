@@ -44,4 +44,4 @@ tools:
 		github.com/mna/pigeon \
 		github.com/campoy/embedmd \
 		mvdan.cc/gofumpt/gofumports
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.17.1
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOPATH)/bin v1.21.0
