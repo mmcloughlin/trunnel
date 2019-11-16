@@ -17,7 +17,7 @@ func main() {
 	app.Usage = "Code generator for binary parsing"
 	app.Version = meta.GitSHA
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		build,
 	}
 
@@ -30,25 +30,27 @@ func main() {
 var (
 	cfg gen.Config
 
-	build = cli.Command{
+	build = &cli.Command{
 		Name:      "build",
 		Usage:     "Generate go package from trunnel",
 		ArgsUsage: "<trunnelfile>...",
 		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:        "pkg, p",
+			&cli.StringFlag{
+				Name:        "pkg",
+				Aliases:     []string{"p"},
 				Usage:       "package name",
 				Destination: &cfg.Package,
 			},
-			cli.StringFlag{
-				Name:        "dir, d",
+			&cli.StringFlag{
+				Name:        "dir",
+				Aliases:     []string{"d"},
 				Usage:       "output directory",
 				Value:       ".",
 				Destination: &cfg.Dir,
 			},
 		},
 		Action: func(c *cli.Context) error {
-			filenames := c.Args()
+			filenames := c.Args().Slice()
 			if len(filenames) == 0 {
 				return cli.NewExitError("missing trunnel filenames", 1)
 			}
